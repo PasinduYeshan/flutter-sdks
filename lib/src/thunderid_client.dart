@@ -57,10 +57,7 @@ class ThunderIDClient {
   /// Initializes the SDK. Must be called once before any other method (spec §5.1).
   Future<bool> initialize(ThunderIDConfig config) async {
     if (_initialized) {
-      throw const IAMException(
-        ThunderIDErrorCode.alreadyInitialized,
-        'SDK is already initialized',
-      );
+      throw const IAMException(ThunderIDErrorCode.alreadyInitialized, 'SDK is already initialized');
     }
     // Validated before anything else, so a malformed backend fails before any network call.
     final backendEndpoints = resolveBackendEndpoints(config);
@@ -147,9 +144,7 @@ class ThunderIDClient {
   /// the server responded with a `passkeyChallenge` in `data.additionalData`, and returns the
   /// flat `credentialId`/`clientDataJSON`/`authenticatorData`/`signature`/`userHandle` input map
   /// to resubmit via [signIn].
-  Future<Map<String, String>> performPasskeyAuthentication({
-    required String requestOptionsJson,
-  }) async {
+  Future<Map<String, String>> performPasskeyAuthentication({required String requestOptionsJson}) async {
     _requireInitialized();
     _refuseOnBackend('performPasskeyAuthentication');
     final result = await _channel.invokeMap('performPasskeyAuthentication', {
@@ -161,9 +156,7 @@ class ThunderIDClient {
   /// Performs a native WebAuthn attestation ceremony (registers a new passkey) after the server
   /// responded with `passkeyCreationOptions` in `data.additionalData`, and returns the flat
   /// `credentialId`/`clientDataJSON`/`attestationObject` input map to resubmit via [signIn].
-  Future<Map<String, String>> performPasskeyRegistration({
-    required String creationOptionsJson,
-  }) async {
+  Future<Map<String, String>> performPasskeyRegistration({required String creationOptionsJson}) async {
     _requireInitialized();
     _refuseOnBackend('performPasskeyRegistration');
     final result = await _channel.invokeMap('performPasskeyRegistration', {
@@ -197,8 +190,7 @@ class ThunderIDClient {
     try {
       final backend = _backend;
       if (backend != null) return await backend.handleRedirectCallback(url);
-      final result =
-          await _channel.invokeMap('handleRedirectCallback', {'url': url});
+      final result = await _channel.invokeMap('handleRedirectCallback', {'url': url});
       return User.fromMap(result);
     } finally {
       _isLoading = false;
@@ -214,13 +206,9 @@ class ThunderIDClient {
   Future<User> signInWithRedirect({SignInOptions? options}) async {
     _requireInitialized();
     final url = await buildSignInUrl(options: options);
-    final callbackUrl =
-        await _channel.invoke<String>('openAuthSession', {'url': url});
+    final callbackUrl = await _channel.invoke<String>('openAuthSession', {'url': url});
     if (callbackUrl == null || callbackUrl.isEmpty) {
-      throw const IAMException(
-        ThunderIDErrorCode.invalidRedirectUri,
-        'The browser session returned no callback',
-      );
+      throw const IAMException(ThunderIDErrorCode.invalidRedirectUri, 'The browser session returned no callback');
     }
     return handleRedirectCallback(callbackUrl);
   }
@@ -313,10 +301,7 @@ class ThunderIDClient {
     return result.cast<String, dynamic>();
   }
 
-  Future<TokenResponse> exchangeToken(
-    TokenExchangeRequestConfig config, {
-    String? sessionId,
-  }) async {
+  Future<TokenResponse> exchangeToken(TokenExchangeRequestConfig config, {String? sessionId}) async {
     _requireInitialized();
     _refuseOnBackend('exchangeToken');
     final result = await _channel.invokeMap('exchangeToken', {
@@ -520,10 +505,7 @@ class ThunderIDClient {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  void _initializeBackend(
-    ResolvedBackendEndpoints endpoints,
-    ThunderIDConfig config,
-  ) {
+  void _initializeBackend(ResolvedBackendEndpoints endpoints, ThunderIDConfig config) {
     // The native SDK is not initialized: the backend runs the OAuth flow, so nothing here talks to
     // the ThunderID server or reads its discovery metadata.
     final backend = BackendClient(

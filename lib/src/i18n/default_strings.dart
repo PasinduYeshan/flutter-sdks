@@ -72,16 +72,14 @@ const Map<String, String> thunderDefaultStrings = {
   'changeCredential.update': 'Update',
   'changeCredential.section': 'Security',
   'changeCredential.heading': 'Change {credential}',
-  'changeCredential.description':
-      "Choose a strong {credentialLower} and don't reuse it for other accounts.",
+  'changeCredential.description': "Choose a strong {credentialLower} and don't reuse it for other accounts.",
   'changeCredential.new.label': 'New {credential}',
   'changeCredential.confirm.label': 'Confirm New {credential}',
   'changeCredential.mismatch.error': '{credential}s do not match.',
   'changeCredential.requirements.pattern': 'Must match the required format.',
   'changeCredential.generic.error':
       'An error occurred while updating your {credentialLower}. Please try again.',
-  'changeCredential.unavailable.description':
-      'Please contact your administrator.',
+  'changeCredential.unavailable.description': 'Please contact your administrator.',
 
   // Organizations
   'organization.unnamed': 'Organization',
@@ -113,8 +111,7 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.common.columns.organization_unit': 'Organization unit',
   'admin.common.errors.forbidden': 'You do not have permission to do this.',
   'admin.common.errors.not_found': 'This item could not be found.',
-  'admin.common.errors.no_ou':
-      'Choose an organization unit before creating this item.',
+  'admin.common.errors.no_ou': 'Choose an organization unit before creating this item.',
   'admin.common.fields.identity': 'Name',
   'admin.common.fields.identity_type': 'Type',
   'admin.common.fields.identity_placeholder': 'Select an identity',
@@ -131,8 +128,7 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.common.search.submit': 'Search',
   'admin.common.search.clear': 'Clear search',
   'admin.common.search.placeholder': 'Exact {attribute}',
-  'admin.common.search.no_results':
-      'No matches for "{value}". Search matches the whole value.',
+  'admin.common.search.no_results': 'No matches for "{value}". Search matches the whole value.',
   'admin.common.filters.type': 'Assignee type',
   'admin.common.filters.all_types': 'All types',
   'admin.users.list.search.username': 'Username',
@@ -160,12 +156,10 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.users.details.error': 'Could not load this user. Please try again.',
   'admin.users.details.delete.action': 'Delete user',
   'admin.users.details.delete.confirm': 'Delete {name}?',
-  'admin.users.details.delete.error':
-      'Could not delete the user. Please try again.',
+  'admin.users.details.delete.error': 'Could not delete the user. Please try again.',
   'admin.users.details.edit.action': 'Edit',
   'admin.users.details.edit.save': 'Save changes',
-  'admin.users.details.edit.error':
-      'Could not save the user. Please try again.',
+  'admin.users.details.edit.error': 'Could not save the user. Please try again.',
   'admin.groups.list.title': 'Groups',
   'admin.groups.list.columns.name': 'Name',
   'admin.groups.list.columns.description': 'Description',
@@ -183,8 +177,7 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.groups.members.empty': 'This group has no members.',
   'admin.groups.members.remove_label': 'Remove {name} from the group',
   'admin.groups.members.error': 'Could not load members. Please try again.',
-  'admin.groups.members.update_error':
-      'Could not update the members. Please try again.',
+  'admin.groups.members.update_error': 'Could not update the members. Please try again.',
   'admin.roles.list.title': 'Roles',
   'admin.roles.list.columns.name': 'Name',
   'admin.roles.list.columns.description': 'Description',
@@ -201,14 +194,11 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.roles.assignments.columns.type': 'Type',
   'admin.roles.assignments.empty': 'This role is not assigned to anyone.',
   'admin.roles.assignments.remove_label': 'Remove the role from {name}',
-  'admin.roles.assignments.error':
-      'Could not load assignments. Please try again.',
-  'admin.roles.assignments.update_error':
-      'Could not update the assignments. Please try again.',
+  'admin.roles.assignments.error': 'Could not load assignments. Please try again.',
+  'admin.roles.assignments.update_error': 'Could not update the assignments. Please try again.',
   'admin.roles.permissions.title': 'Permissions',
   'admin.roles.permissions.empty': 'This role grants no permissions.',
-  'admin.roles.permissions.error':
-      'Could not load the permissions. Please try again.',
+  'admin.roles.permissions.error': 'Could not load the permissions. Please try again.',
   'admin.agents.list.title': 'Agents',
   'admin.agents.list.columns.name': 'Name',
   'admin.agents.list.columns.type': 'Agent type',
@@ -220,8 +210,7 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.agents.create.fields.name': 'Name',
   'admin.agents.create.fields.type': 'Agent type',
   'admin.agents.create.fields.description': 'Description',
-  'admin.agents.create.error':
-      'Could not register the agent. Please try again.',
+  'admin.agents.create.error': 'Could not register the agent. Please try again.',
   'admin.agents.details.overview': 'Overview',
   'admin.agents.details.type': 'Agent type',
   'admin.agents.details.owner': 'Owner',
@@ -233,16 +222,14 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.agents.details.error': 'Could not load this agent. Please try again.',
   'admin.agents.details.delete.action': 'Delete agent',
   'admin.agents.details.delete.confirm': 'Delete {name}?',
-  'admin.agents.details.delete.error':
-      'Could not delete the agent. Please try again.',
+  'admin.agents.details.delete.error': 'Could not delete the agent. Please try again.',
   'admin.applications.list.title': 'Applications',
   'admin.applications.list.columns.name': 'Name',
   'admin.applications.list.columns.client_id': 'Client ID',
   'admin.applications.list.columns.type': 'Type',
   'admin.applications.list.columns.status': 'Status',
   'admin.applications.list.empty': 'No applications found.',
-  'admin.applications.list.error':
-      'Could not load applications. Please try again.',
+  'admin.applications.list.error': 'Could not load applications. Please try again.',
   'admin.applications.types.browser': 'Browser',
   'admin.applications.types.fullstack': 'Full-stack',
   'admin.applications.types.mobile': 'Mobile',
@@ -265,32 +252,25 @@ const Map<String, String> thunderDefaultStrings = {
   'admin.applications.fields.public_client': 'Public client (no client secret)',
   'admin.applications.create.title': 'Create application',
   'admin.applications.create.submit': 'Create application',
-  'admin.applications.create.error':
-      'Could not create the application. Please try again.',
+  'admin.applications.create.error': 'Could not create the application. Please try again.',
   'admin.applications.secret.title': 'Client secret',
-  'admin.applications.secret.notice':
-      'Copy this secret now. It will not be shown again.',
+  'admin.applications.secret.notice': 'Copy this secret now. It will not be shown again.',
   'admin.applications.secret.done': 'Done',
   'admin.applications.details.overview': 'Overview',
   'admin.applications.details.oauth': 'OAuth',
   'admin.applications.details.template': 'Template',
   'admin.applications.details.no_redirect_uris': 'No redirect URIs.',
   'admin.applications.details.no_grant_types': 'No grant types.',
-  'admin.applications.details.no_oauth':
-      'This application has no OAuth client.',
-  'admin.applications.details.error':
-      'Could not load this application. Please try again.',
+  'admin.applications.details.no_oauth': 'This application has no OAuth client.',
+  'admin.applications.details.error': 'Could not load this application. Please try again.',
   'admin.applications.details.delete.action': 'Delete application',
   'admin.applications.details.delete.confirm': 'Delete {name}?',
-  'admin.applications.details.delete.error':
-      'Could not delete the application. Please try again.',
+  'admin.applications.details.delete.error': 'Could not delete the application. Please try again.',
   'admin.applications.details.edit.action': 'Edit',
   'admin.applications.details.edit.save': 'Save changes',
-  'admin.applications.details.edit.error':
-      'Could not save the application. Please try again.',
+  'admin.applications.details.edit.error': 'Could not save the application. Please try again.',
   'admin.applications.details.regenerate.action': 'Regenerate client secret',
   'admin.applications.details.regenerate.confirm':
       'Replace the client secret of {name}? Anything using the current secret stops working.',
-  'admin.applications.details.regenerate.error':
-      'Could not regenerate the client secret. Please try again.',
+  'admin.applications.details.regenerate.error': 'Could not regenerate the client secret. Please try again.',
 };

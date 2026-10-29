@@ -167,8 +167,7 @@ class IAMApiException extends IAMException {
   });
 
   @override
-  String toString() =>
-      '[${code.value}] $operation: $message (HTTP $statusCode)';
+  String toString() => '[${code.value}] $operation: $message (HTTP $statusCode)';
 }
 
 /// A localizable message in a [ServerError] or an [AdministrationFlowStepError]: its translation
@@ -178,11 +177,7 @@ class ServerErrorMessage {
   final String? defaultValue;
   final Map<String, String> params;
 
-  const ServerErrorMessage({
-    this.key,
-    this.defaultValue,
-    this.params = const {},
-  });
+  const ServerErrorMessage({this.key, this.defaultValue, this.params = const {}});
 
   /// Reads a message object, or a plain string as its [defaultValue]. Returns `null` for anything
   /// else.
@@ -198,8 +193,7 @@ class ServerErrorMessage {
       params: params is Map
           ? {
               for (final entry in params.entries)
-                if (entry.value != null)
-                  entry.key.toString(): entry.value.toString(),
+                if (entry.value != null) entry.key.toString(): entry.value.toString(),
             }
           : const {},
     );
@@ -243,11 +237,7 @@ class AdministrationFlowStepError {
   final ServerErrorMessage? message;
   final ServerErrorMessage? description;
 
-  const AdministrationFlowStepError({
-    this.code,
-    this.message,
-    this.description,
-  });
+  const AdministrationFlowStepError({this.code, this.message, this.description});
 
   /// Reads a step error leniently; anything that is not an object reads as an empty error.
   factory AdministrationFlowStepError.fromJson(Object? value) {

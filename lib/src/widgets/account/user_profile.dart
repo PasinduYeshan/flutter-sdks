@@ -185,12 +185,8 @@ String? mapAttribute(
 /// Finds the schema field, if any, that [mapAttribute]'s `'picture'` candidates would resolve -
 /// what the styled [UserProfile]'s avatar edit badge edits, so the two stay in sync with no
 /// separate configuration of their own.
-ProfileField? _findPictureField(
-  List<ProfileField> fields,
-  Map<String, List<String>> mappings,
-) {
-  final candidates =
-      mappings['picture'] ?? _defaultAttributeMappings['picture']!;
+ProfileField? _findPictureField(List<ProfileField> fields, Map<String, List<String>> mappings) {
+  final candidates = mappings['picture'] ?? _defaultAttributeMappings['picture']!;
   for (final candidate in candidates) {
     for (final field in fields) {
       if (field.name == candidate) return field;
@@ -433,18 +429,14 @@ class UserProfile extends StatelessWidget {
         }
         final error = state.error;
         if (error != null) {
-          return Text(
-            error,
-            style: TextStyle(color: colors.error, fontSize: 13),
-          );
+          return Text(error, style: TextStyle(color: colors.error, fontSize: 13));
         }
         final pictureField = _findPictureField(state.fields, attributeMapping);
         // Every schema field is shown, including read-only ones like username - they just get
         // no Edit link, matching the Android/iOS SDKs rather than disappearing entirely. The
         // picture field, if any, is edited through the avatar's own badge instead of appearing
         // a second time as a plain URL row.
-        final visibleFields =
-            state.fields.where((f) => f != pictureField).toList();
+        final visibleFields = state.fields.where((f) => f != pictureField).toList();
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,31 +448,19 @@ class UserProfile extends StatelessWidget {
                     ThunderAccountAvatar(
                       onEdit: pictureField == null
                           ? null
-                          : () => _openFieldEditor(
-                                context,
-                                state,
-                                pictureField,
-                                i18n,
-                              ),
+                          : () => _openFieldEditor(context, state, pictureField, i18n),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       state.displayName,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: colors.text,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.text),
                     ),
                     if (state.email != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           state.email!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: colors.textSecondary,
-                          ),
+                          style: TextStyle(fontSize: 13, color: colors.textSecondary),
                         ),
                       ),
                   ],
@@ -570,9 +550,8 @@ class UserProfile extends StatelessWidget {
   }
 
   String _fieldDisplayValue(ProfileField field) {
-    final value = field.isComplex
-        ? stringifyComplexValue(field.rawValue as Map)
-        : stringifyFieldValue(field.rawValue);
+    final value =
+        field.isComplex ? stringifyComplexValue(field.rawValue as Map) : stringifyFieldValue(field.rawValue);
     return value.isEmpty ? '-' : value;
   }
 
@@ -588,8 +567,7 @@ class UserProfile extends StatelessWidget {
         opaque: true,
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            _ProfileFieldEditPage(
+        pageBuilder: (context, animation, secondaryAnimation) => _ProfileFieldEditPage(
           field: field,
           state: state,
           i18n: i18n,
@@ -604,11 +582,7 @@ class _ProfileFieldEditPage extends StatefulWidget {
   final UserProfileState state;
   final ThunderIDI18n i18n;
 
-  const _ProfileFieldEditPage({
-    required this.field,
-    required this.state,
-    required this.i18n,
-  });
+  const _ProfileFieldEditPage({required this.field, required this.state, required this.i18n});
 
   @override
   State<_ProfileFieldEditPage> createState() => _ProfileFieldEditPageState();
@@ -668,8 +642,7 @@ class _ProfileFieldEditPageState extends State<_ProfileFieldEditPage> {
               alignment: Alignment.centerLeft,
               child: Switch(
                 value: state.fieldValue(field) == 'true',
-                onChanged: (on) =>
-                    state.setFieldValue(field.name, on ? 'true' : 'false'),
+                onChanged: (on) => state.setFieldValue(field.name, on ? 'true' : 'false'),
               ),
             )
           : ThunderAccountField(

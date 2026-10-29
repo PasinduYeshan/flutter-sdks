@@ -13,36 +13,11 @@ import 'stories.dart';
 const _ou = 'ou-default';
 
 const _users = [
-  ManagedUser(
-      id: 'u-ada',
-      ouId: _ou,
-      ouHandle: 'default',
-      type: 'customer',
-      display: 'Ada Lovelace'),
-  ManagedUser(
-      id: 'u-grace',
-      ouId: _ou,
-      ouHandle: 'default',
-      type: 'employee',
-      display: 'Grace Hopper'),
-  ManagedUser(
-      id: 'u-alan',
-      ouId: _ou,
-      ouHandle: 'default',
-      type: 'employee',
-      display: 'Alan Turing'),
-  ManagedUser(
-      id: 'u-katherine',
-      ouId: _ou,
-      ouHandle: 'default',
-      type: 'employee',
-      display: 'Katherine Johnson'),
-  ManagedUser(
-      id: 'u-margaret',
-      ouId: _ou,
-      ouHandle: 'default',
-      type: 'customer',
-      display: 'Margaret Hamilton'),
+  ManagedUser(id: 'u-ada', ouId: _ou, ouHandle: 'default', type: 'customer', display: 'Ada Lovelace'),
+  ManagedUser(id: 'u-grace', ouId: _ou, ouHandle: 'default', type: 'employee', display: 'Grace Hopper'),
+  ManagedUser(id: 'u-alan', ouId: _ou, ouHandle: 'default', type: 'employee', display: 'Alan Turing'),
+  ManagedUser(id: 'u-katherine', ouId: _ou, ouHandle: 'default', type: 'employee', display: 'Katherine Johnson'),
+  ManagedUser(id: 'u-margaret', ouId: _ou, ouHandle: 'default', type: 'customer', display: 'Margaret Hamilton'),
 ];
 
 const _detailUser = ManagedUser(
@@ -50,12 +25,7 @@ const _detailUser = ManagedUser(
   ouId: _ou,
   ouHandle: 'default',
   type: 'customer',
-  attributes: {
-    'username': 'ada',
-    'email': 'ada@example.com',
-    'given_name': 'Ada',
-    'password': 'never shown'
-  },
+  attributes: {'username': 'ada', 'email': 'ada@example.com', 'given_name': 'Ada', 'password': 'never shown'},
 );
 
 const _memberships = [
@@ -80,13 +50,10 @@ final _detailApplication = Application.fromJson({
   ],
 });
 
-const _stories = [
-  StoryDef('base', 'Base (sample data)'),
-  StoryDef('connected', 'Connected')
-];
+const _stories = [StoryDef('base', 'Base (sample data)'), StoryDef('connected', 'Connected')];
 
-String _name(ManagedUser user) => resolveManagedIdentityName(
-    id: user.id, display: user.display, attributes: user.attributes);
+String _name(ManagedUser user) =>
+    resolveManagedIdentityName(id: user.id, display: user.display, attributes: user.attributes);
 
 Widget _themed(StoryContext s, Widget child) => Theme(
       data: ThemeData(
@@ -103,9 +70,7 @@ final List<ComponentDef> customRenderComponentDefs = [
     name: 'UserList → DataTable',
     category: 'Custom rendering',
     stories: _stories,
-    controls: const [
-      ControlDef.choice('limit', ['2', '5', '20'])
-    ],
+    controls: const [ControlDef.choice('limit', ['2', '5', '20'])],
     defaults: const {'limit': '2'},
     build: (context, s) {
       final limit = int.tryParse(s.text('limit')) ?? 2;
@@ -216,18 +181,20 @@ ${s.story == 'connected' ? "UserDetails(userId: '${s.text('userId')}', deletable
     stories: _stories,
     controls: const [
       ControlDef.choice('attribute', ['email', 'mobile_number']),
-      ControlDef.text('flowHandle')
+      ControlDef.text('flowHandle'),
     ],
     defaults: const {
       'attribute': 'email',
-      'flowHandle': AttributeVerification.defaultFlowHandle
+      'flowHandle': AttributeVerification.defaultFlowHandle,
     },
     build: (context, s) => _themed(
       s,
       _CustomVerifyAttribute(
-          key: ValueKey(
-              '${s.story}|${s.text('attribute')}|${s.text('flowHandle')}'),
-          story: s),
+        key: ValueKey(
+          '${s.story}|${s.text('attribute')}|${s.text('flowHandle')}',
+        ),
+        story: s,
+      ),
     ),
     code: (s) => '''
 ${s.story == 'connected' ? 'VerifyAttribute(onCancel: () => close(),' : 'BaseVerifyAttribute('}
@@ -265,8 +232,7 @@ ${s.story == 'connected' ? 'VerifyAttribute(onCancel: () => close(),' : 'BaseVer
             ? ApplicationDetails(
                 applicationId: s.text('applicationId'),
                 secretRegenerable: true,
-                builder: (context, details) =>
-                    _ApplicationCard(details: details),
+                builder: (context, details) => _ApplicationCard(details: details),
               )
             : _SampleApplicationDetails(emit: s.emit),
       );
@@ -297,8 +263,7 @@ class _SampleApplicationDetails extends StatefulWidget {
   const _SampleApplicationDetails({required this.emit});
 
   @override
-  State<_SampleApplicationDetails> createState() =>
-      _SampleApplicationDetailsState();
+  State<_SampleApplicationDetails> createState() => _SampleApplicationDetailsState();
 }
 
 class _SampleApplicationDetailsState extends State<_SampleApplicationDetails> {
@@ -309,8 +274,7 @@ class _SampleApplicationDetailsState extends State<_SampleApplicationDetails> {
         application: _detailApplication,
         clientSecret: _secret,
         onRegenerateSecret: () {
-          setState(() => _secret =
-              'sample-secret-${DateTime.now().millisecondsSinceEpoch % 10000}');
+          setState(() => _secret = 'sample-secret-${DateTime.now().millisecondsSinceEpoch % 10000}');
           widget.emit('onRegenerateSecret');
         },
         onSecretDismissed: () {
@@ -328,17 +292,14 @@ class _ApplicationCard extends StatelessWidget {
 
   const _ApplicationCard({required this.details});
 
-  Future<void> _confirmRegenerate(
-      BuildContext context, VoidCallback regenerate) async {
+  Future<void> _confirmRegenerate(BuildContext context, VoidCallback regenerate) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Regenerate the client secret?'),
         content: const Text('Anything using the current secret stops working.'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(
             key: const Key('playground-custom-application-confirm'),
             onPressed: () => Navigator.pop(context, true),
@@ -353,8 +314,7 @@ class _ApplicationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final application = details.application;
-    if (details.isLoading && application == null)
-      return const Center(child: CircularProgressIndicator());
+    if (details.isLoading && application == null) return const Center(child: CircularProgressIndicator());
     final oauth = application?.oauth2Config;
     final regenerate = details.onRegenerateSecret;
     return Card(
@@ -364,36 +324,26 @@ class _ApplicationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (details.error != null)
-              Text(details.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(details.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.apps),
               title: Text(application?.name ?? ''),
               subtitle: Text(oauth?.clientId ?? ''),
             ),
-            Wrap(spacing: 6, children: [
-              for (final grant in oauth?.grantTypes ?? const <String>[])
-                Chip(label: Text(grant))
-            ]),
-            for (final uri in oauth?.redirectUris ?? const <String>[])
-              Text(uri),
+            Wrap(spacing: 6, children: [for (final grant in oauth?.grantTypes ?? const <String>[]) Chip(label: Text(grant))]),
+            for (final uri in oauth?.redirectUris ?? const <String>[]) Text(uri),
             if (details.clientSecret != null) ...[
               const SizedBox(height: 8),
-              SelectableText(details.clientSecret!,
-                  key: const Key('playground-custom-application-secret')),
-              TextButton(
-                  onPressed: details.onSecretDismissed,
-                  child: const Text('I have copied it')),
+              SelectableText(details.clientSecret!, key: const Key('playground-custom-application-secret')),
+              TextButton(onPressed: details.onSecretDismissed, child: const Text('I have copied it')),
             ],
             if (regenerate != null)
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   key: const Key('playground-custom-application-regenerate'),
-                  onPressed: details.isRegeneratingSecret
-                      ? null
-                      : () => _confirmRegenerate(context, regenerate),
+                  onPressed: details.isRegeneratingSecret ? null : () => _confirmRegenerate(context, regenerate),
                   child: const Text('Regenerate secret'),
                 ),
               ),
@@ -450,24 +400,17 @@ class _UserTable extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (list.isLoading && list.rows.isEmpty)
-          const LinearProgressIndicator(),
-        if (list.error != null)
-          Text(list.error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        if (list.isLoading && list.rows.isEmpty) const LinearProgressIndicator(),
+        if (list.error != null) Text(list.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         DataTable(
           key: const Key('playground-custom-user-table'),
           showCheckboxColumn: false,
-          columns: const [
-            DataColumn(label: Text('Name')),
-            DataColumn(label: Text('Type'))
-          ],
+          columns: const [DataColumn(label: Text('Name')), DataColumn(label: Text('Type'))],
           rows: [
             for (final user in list.rows)
               DataRow(
                 selected: user.id == list.selectedId,
-                onSelectChanged:
-                    list.onSelect == null ? null : (_) => list.onSelect!(user),
+                onSelectChanged: list.onSelect == null ? null : (_) => list.onSelect!(user),
                 cells: [DataCell(Text(_name(user))), DataCell(Text(user.type))],
               ),
           ],
@@ -476,9 +419,7 @@ class _UserTable extends StatelessWidget {
           Row(
             children: [
               TextButton(
-                onPressed: list.offset > 0
-                    ? () => onPageChange(list.offset - list.limit)
-                    : null,
+                onPressed: list.offset > 0 ? () => onPageChange(list.offset - list.limit) : null,
                 child: const Text('Previous'),
               ),
               Expanded(
@@ -488,9 +429,8 @@ class _UserTable extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: list.offset + list.limit < list.totalResults
-                    ? () => onPageChange(list.offset + list.limit)
-                    : null,
+                onPressed:
+                    list.offset + list.limit < list.totalResults ? () => onPageChange(list.offset + list.limit) : null,
                 child: const Text('Next'),
               ),
             ],
@@ -517,14 +457,12 @@ class _GroupForm extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(
                 key: const Key('playground-custom-group-name'),
-                decoration: const InputDecoration(
-                    labelText: 'Name', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
                 onChanged: form.onNameChanged,
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: const InputDecoration(
-                    labelText: 'Description', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
                 minLines: 2,
                 maxLines: 4,
                 onChanged: form.onDescriptionChanged,
@@ -532,22 +470,16 @@ class _GroupForm extends StatelessWidget {
               if (form.error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(form.error!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
+                  child: Text(form.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (form.onCancel != null)
-                    TextButton(
-                        onPressed: form.onCancel, child: const Text('Cancel')),
+                  if (form.onCancel != null) TextButton(onPressed: form.onCancel, child: const Text('Cancel')),
                   FilledButton(
-                    onPressed:
-                        form.isValid && !form.isSubmitting ? form.submit : null,
-                    child:
-                        Text(form.isSubmitting ? 'Creating…' : 'Create group'),
+                    onPressed: form.isValid && !form.isSubmitting ? form.submit : null,
+                    child: Text(form.isSubmitting ? 'Creating…' : 'Create group'),
                   ),
                 ],
               ),
@@ -566,8 +498,7 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = details.user;
-    if (details.isLoading && user == null)
-      return const Center(child: CircularProgressIndicator());
+    if (details.isLoading && user == null) return const Center(child: CircularProgressIndicator());
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -576,27 +507,17 @@ class _UserCard extends StatelessWidget {
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                  child: Text(details.displayName.isEmpty
-                      ? '?'
-                      : details.displayName[0])),
+              leading: CircleAvatar(child: Text(details.displayName.isEmpty ? '?' : details.displayName[0])),
               title: Text(details.displayName),
-              subtitle: Text(user == null
-                  ? ''
-                  : '${user.type} · ${user.ouHandle ?? user.ouId}'),
+              subtitle: Text(user == null ? '' : '${user.type} · ${user.ouHandle ?? user.ouId}'),
             ),
-            for (final entry in details.attributes.entries)
-              Text('${entry.key}: ${entry.value}'),
+            for (final entry in details.attributes.entries) Text('${entry.key}: ${entry.value}'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, children: [
-              for (final group in details.groups) Chip(label: Text(group.name))
-            ]),
+            Wrap(spacing: 6, children: [for (final group in details.groups) Chip(label: Text(group.name))]),
             if (details.onDelete != null)
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                    onPressed: details.onDelete,
-                    child: const Text('Delete user')),
+                child: TextButton(onPressed: details.onDelete, child: const Text('Delete user')),
               ),
           ],
         ),
@@ -682,9 +603,12 @@ class _VerificationCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 12),
                   child: TextField(
                     key: ValueKey(
-                        'playground-custom-verify-$name-${step.stepCount}'),
+                      'playground-custom-verify-$name-${step.stepCount}',
+                    ),
                     decoration: const InputDecoration(
-                        labelText: 'Code', border: OutlineInputBorder()),
+                      labelText: 'Code',
+                      border: OutlineInputBorder(),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) => step.onValueChanged(name, value),
                   ),
@@ -693,14 +617,18 @@ class _VerificationCard extends StatelessWidget {
             if (step.error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(step.error!,
-                    style: TextStyle(color: theme.colorScheme.error)),
+                child: Text(
+                  step.error!,
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
               ),
             if (step.successMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(step.successMessage!,
-                    style: TextStyle(color: theme.colorScheme.primary)),
+                child: Text(
+                  step.successMessage!,
+                  style: TextStyle(color: theme.colorScheme.primary),
+                ),
               ),
             const SizedBox(height: 12),
             Wrap(
@@ -709,7 +637,9 @@ class _VerificationCard extends StatelessWidget {
               children: [
                 if (step.onCancel != null)
                   TextButton(
-                      onPressed: step.onCancel, child: const Text('Close')),
+                    onPressed: step.onCancel,
+                    child: const Text('Close'),
+                  ),
                 if (resendId != null)
                   TextButton(
                     onPressed:
@@ -724,8 +654,9 @@ class _VerificationCard extends StatelessWidget {
                   ),
                 if (step.isAwaitingLink)
                   FilledButton(
-                      onPressed: step.isLoading ? null : step.done,
-                      child: const Text('Done')),
+                    onPressed: step.isLoading ? null : step.done,
+                    child: const Text('Done'),
+                  ),
               ],
             ),
           ],

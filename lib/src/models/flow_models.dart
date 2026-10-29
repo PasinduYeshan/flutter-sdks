@@ -95,17 +95,16 @@ class EmbeddedFlowResponse {
   /// The `data.additionalData` block, if present. Carries the WebAuthn/passkey ceremony
   /// options (`passkeyChallenge`/`passkeyCreationOptions`, each a JSON-encoded string) that
   /// drive an automatic passkey resubmit, alongside any other server-provided metadata.
-  Map<String, dynamic>? get additionalData =>
-      (data?['additionalData'] as Map?)?.cast<String, dynamic>();
+  Map<String, dynamic>? get additionalData => (data?['additionalData'] as Map?)?.cast<String, dynamic>();
 
   factory EmbeddedFlowResponse.fromMap(Map<dynamic, dynamic> map) {
     final rawStatus = map['flowStatus'] as String? ?? '';
     final normalizedStatus = rawStatus.trim().toUpperCase().split('.').last;
     final status = normalizedStatus == 'COMPLETE'
-        ? FlowStatus.complete
-        : normalizedStatus == 'ERROR'
-            ? FlowStatus.error
-            : FlowStatus.promptOnly;
+      ? FlowStatus.complete
+      : normalizedStatus == 'ERROR'
+        ? FlowStatus.error
+        : FlowStatus.promptOnly;
     return EmbeddedFlowResponse(
       flowId: map['flowId'] as String?,
       flowStatus: status,
@@ -134,8 +133,7 @@ class FlowErrorText {
           key: map['key'] as String?,
           defaultValue: map['defaultValue'] as String?,
           params: {
-            for (final e in ((map['params'] as Map?) ?? const {}).entries)
-              '${e.key}': '${e.value}',
+            for (final e in ((map['params'] as Map?) ?? const {}).entries) '${e.key}': '${e.value}',
           },
         )
       : null;
@@ -166,9 +164,7 @@ class KeyValuePair {
     if (parsed is! List) return const [];
     return [
       for (final entry in parsed)
-        if (entry is Map &&
-            entry['value'] is String &&
-            (entry['value'] as String).isNotEmpty)
+        if (entry is Map && entry['value'] is String && (entry['value'] as String).isNotEmpty)
           KeyValuePair(
             label: entry['label'] is String ? entry['label'] as String : '',
             value: entry['value'] as String,
@@ -177,8 +173,7 @@ class KeyValuePair {
   }
 
   @override
-  bool operator ==(Object other) =>
-      other is KeyValuePair && other.label == label && other.value == value;
+  bool operator ==(Object other) => other is KeyValuePair && other.label == label && other.value == value;
 
   @override
   int get hashCode => Object.hash(label, value);

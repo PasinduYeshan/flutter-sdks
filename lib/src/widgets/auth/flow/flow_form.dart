@@ -94,11 +94,11 @@ class _FlowFormState extends State<FlowForm> {
   void dispose() {
     for (final c in _controllers.values) {
       {
-        c.dispose();
-      }
-      for (final r in _linkRecognizers) {
-        r.dispose();
-      }
+      c.dispose();
+    }
+    for (final r in _linkRecognizers) {
+      r.dispose();
+    }
     }
     super.dispose();
   }
@@ -172,10 +172,7 @@ class _FlowFormState extends State<FlowForm> {
               ),
           ],
         ],
-        if (widget.error != null)
-          _ErrorBanner(
-            message: _resolver?.translate(widget.errorMessage) ?? widget.error!,
-          ),
+        if (widget.error != null) _ErrorBanner(message: _resolver?.translate(widget.errorMessage) ?? widget.error!),
       ],
     );
   }
@@ -260,9 +257,8 @@ class _FlowFormState extends State<FlowForm> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
-            children: nested
-                .map((c) => _renderComponent(context, c, actions))
-                .toList(),
+            children:
+                nested.map((c) => _renderComponent(context, c, actions)).toList(),
           );
         }
         return _renderAction(context, comp, actions);
@@ -354,18 +350,14 @@ class _FlowFormState extends State<FlowForm> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               border: Border.all(color: theme.colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
             // Two columns rather than a row each, so every value starts at the same edge however
             // long the labels beside them are.
             child: Table(
-              columnWidths: const {
-                0: IntrinsicColumnWidth(),
-                1: FlexColumnWidth(),
-              },
+              columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
               defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
@@ -379,10 +371,7 @@ class _FlowFormState extends State<FlowForm> {
                         label: '${_resolve(pair.label)}: ${pair.value}',
                         excludeSemantics: true,
                         child: Padding(
-                          padding: EdgeInsets.only(
-                            right: 24,
-                            top: index == 0 ? 0 : 12,
-                          ),
+                          padding: EdgeInsets.only(right: 24, top: index == 0 ? 0 : 12),
                           child: Text(
                             _resolve(pair.label),
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -396,8 +385,7 @@ class _FlowFormState extends State<FlowForm> {
                           padding: EdgeInsets.only(top: index == 0 ? 0 : 12),
                           child: Text(
                             pair.value,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w500),
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                           ),
                         ),
                       ),
@@ -505,8 +493,7 @@ class _FlowFormState extends State<FlowForm> {
     if (url.isEmpty || url.startsWith('{{')) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
-    if (uri.scheme.toLowerCase() != 'http' &&
-        uri.scheme.toLowerCase() != 'https') {
+    if (uri.scheme.toLowerCase() != 'http' && uri.scheme.toLowerCase() != 'https') {
       return;
     }
     await launchUrl(uri);
@@ -580,7 +567,8 @@ class _FlowFormState extends State<FlowForm> {
             actionId,
             _controllers.map((k, v) => MapEntry(k, v.text)),
           );
-      final hint = '$metaActionId $label ${_str(comp['icon'])}'.toLowerCase();
+      final hint =
+          '$metaActionId $label ${_str(comp['icon'])}'.toLowerCase();
       if (hint.contains('google')) {
         return GoogleButton(
           label: label,
@@ -846,17 +834,12 @@ class _ErrorBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline,
-            color: colorScheme.onErrorContainer,
-            size: 20,
-          ),
+          Icon(Icons.error_outline, color: colorScheme.onErrorContainer, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style:
-                  TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
+              style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
             ),
           ),
         ],
@@ -868,5 +851,4 @@ class _ErrorBanner extends StatelessWidget {
 /// Whether a non-TRIGGER action asks for the outlined, secondary look rather than the filled primary
 /// one. A missing variant keeps the filled look, so flows that never set one render as before.
 @visibleForTesting
-bool isOutlinedVariant(String variant) =>
-    const {'SECONDARY', 'OUTLINED'}.contains(variant.toUpperCase());
+bool isOutlinedVariant(String variant) => const {'SECONDARY', 'OUTLINED'}.contains(variant.toUpperCase());
