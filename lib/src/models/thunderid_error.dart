@@ -37,6 +37,10 @@ enum ThunderIDErrorCode {
   confirmationCodeInvalid,
   confirmationCodeExpired,
 
+  // Verification
+  /// The server refused a self user attribute verification: an `ERROR` step or an HTTP 4xx.
+  verificationFailed,
+
   // Network & Server
   networkError,
   requestTimeout,
@@ -91,6 +95,7 @@ enum ThunderIDErrorCode {
     'RECOVERY_FAILED': ThunderIDErrorCode.recoveryFailed,
     'CONFIRMATION_CODE_INVALID': ThunderIDErrorCode.confirmationCodeInvalid,
     'CONFIRMATION_CODE_EXPIRED': ThunderIDErrorCode.confirmationCodeExpired,
+    'VERIFICATION_FAILED': ThunderIDErrorCode.verificationFailed,
     'NETWORK_ERROR': ThunderIDErrorCode.networkError,
     'REQUEST_TIMEOUT': ThunderIDErrorCode.requestTimeout,
     'SERVER_ERROR': ThunderIDErrorCode.serverError,
@@ -162,7 +167,8 @@ class IAMApiException extends IAMException {
   });
 
   @override
-  String toString() => '[${code.value}] $operation: $message (HTTP $statusCode)';
+  String toString() =>
+      '[${code.value}] $operation: $message (HTTP $statusCode)';
 }
 
 /// A localizable message in a [ServerError] or an [AdministrationFlowStepError]: its translation
@@ -172,7 +178,11 @@ class ServerErrorMessage {
   final String? defaultValue;
   final Map<String, String> params;
 
-  const ServerErrorMessage({this.key, this.defaultValue, this.params = const {}});
+  const ServerErrorMessage({
+    this.key,
+    this.defaultValue,
+    this.params = const {},
+  });
 
   /// Reads a message object, or a plain string as its [defaultValue]. Returns `null` for anything
   /// else.
@@ -188,7 +198,8 @@ class ServerErrorMessage {
       params: params is Map
           ? {
               for (final entry in params.entries)
-                if (entry.value != null) entry.key.toString(): entry.value.toString(),
+                if (entry.value != null)
+                  entry.key.toString(): entry.value.toString(),
             }
           : const {},
     );
@@ -232,7 +243,11 @@ class AdministrationFlowStepError {
   final ServerErrorMessage? message;
   final ServerErrorMessage? description;
 
-  const AdministrationFlowStepError({this.code, this.message, this.description});
+  const AdministrationFlowStepError({
+    this.code,
+    this.message,
+    this.description,
+  });
 
   /// Reads a step error leniently; anything that is not an object reads as an empty error.
   factory AdministrationFlowStepError.fromJson(Object? value) {

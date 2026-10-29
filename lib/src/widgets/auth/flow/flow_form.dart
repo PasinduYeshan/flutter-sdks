@@ -23,6 +23,7 @@ class FlowForm extends StatefulWidget {
   final String applicationId;
   final EmbeddedFlowResponse? currentStep;
   final bool isLoading;
+
   /// The actionId currently being submitted, if known. When set, only the
   /// button matching this id shows a spinner while `isLoading` is true —
   /// the rest are disabled but keep their label instead of all spinning
@@ -30,11 +31,21 @@ class FlowForm extends StatefulWidget {
   /// don't track which action is in flight).
   final String? loadingActionId;
   final String? error;
+
   /// Translated through the flow's i18n and shown in place of [error] when it resolves.
   final FlowErrorText? errorMessage;
   final Future<void> Function(String actionId, Map<String, String> inputs)
       submit;
   final String submitLabel;
+
+  /// The flow metadata to resolve `{{ t(...) }}` and `{{ meta(...) }}` labels from. When set, it is
+  /// used instead of fetching the metadata for [applicationId].
+  final Map<String, dynamic>? meta;
+
+  /// Submits a `RESEND` component's action. A resend sends no inputs, so the user can ask for a new
+  /// code with the code field empty or partly typed. `RESEND` components are rendered only when it
+  /// is set.
+  final Future<void> Function(String actionId)? resend;
 
   const FlowForm({
     super.key,
@@ -46,6 +57,8 @@ class FlowForm extends StatefulWidget {
     this.loadingActionId,
     this.submitLabel = 'Submit',
     this.errorMessage,
+    this.meta,
+    this.resend,
   });
 
   @override
@@ -60,8 +73,20 @@ class _FlowFormState extends State<FlowForm> {
   @override
   void initState() {
     super.initState();
-    if (widget.applicationId.isNotEmpty) {
+    final meta = widget.meta;
+    if (meta != null) {
+      _resolver = FlowTemplateResolver(meta);
+    } else if (widget.applicationId.isNotEmpty) {
       Future.microtask(_fetchMeta);
+    }
+  }
+
+  @override
+  void didUpdateWidget(FlowForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final meta = widget.meta;
+    if (meta != null && !identical(meta, oldWidget.meta)) {
+      _resolver = FlowTemplateResolver(meta);
     }
   }
 
@@ -69,11 +94,11 @@ class _FlowFormState extends State<FlowForm> {
   void dispose() {
     for (final c in _controllers.values) {
       {
-      c.dispose();
-    }
-    for (final r in _linkRecognizers) {
-      r.dispose();
-    }
+        c.dispose();
+      }
+      for (final r in _linkRecognizers) {
+        r.dispose();
+      }
     }
     super.dispose();
   }
@@ -147,7 +172,10 @@ class _FlowFormState extends State<FlowForm> {
               ),
           ],
         ],
-        if (widget.error != null) _ErrorBanner(message: _resolver?.translate(widget.errorMessage) ?? widget.error!),
+        if (widget.error != null)
+          _ErrorBanner(
+            message: _resolver?.translate(widget.errorMessage) ?? widget.error!,
+          ),
       ],
     );
   }
@@ -189,6 +217,8 @@ class _FlowFormState extends State<FlowForm> {
       case 'PASSWORD_INPUT':
       case 'EMAIL_INPUT':
       case 'NUMBER_INPUT':
+      case 'OTP_INPUT':
+      case 'PHONE_INPUT':
         return 'FIELD';
       case 'ACTION':
         return 'ACTION';
@@ -202,6 +232,11 @@ class _FlowFormState extends State<FlowForm> {
     Map<String, dynamic> comp,
     List<Map<String, dynamic>> actions,
   ) {
+    if (_str(comp['type']) == 'RESEND') {
+      return widget.resend == null
+          ? const SizedBox.shrink()
+          : _renderResend(comp, actions);
+    }
     switch (_effectiveCategory(comp)) {
       case 'DISPLAY':
         return _renderDisplay(context, comp, actions);
@@ -225,8 +260,9 @@ class _FlowFormState extends State<FlowForm> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
-            children:
-                nested.map((c) => _renderComponent(context, c, actions)).toList(),
+            children: nested
+                .map((c) => _renderComponent(context, c, actions))
+                .toList(),
           );
         }
         return _renderAction(context, comp, actions);
@@ -318,14 +354,18 @@ class _FlowFormState extends State<FlowForm> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.5),
               border: Border.all(color: theme.colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
             // Two columns rather than a row each, so every value starts at the same edge however
             // long the labels beside them are.
             child: Table(
-              columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
+              columnWidths: const {
+                0: IntrinsicColumnWidth(),
+                1: FlexColumnWidth(),
+              },
               defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
@@ -339,7 +379,10 @@ class _FlowFormState extends State<FlowForm> {
                         label: '${_resolve(pair.label)}: ${pair.value}',
                         excludeSemantics: true,
                         child: Padding(
-                          padding: EdgeInsets.only(right: 24, top: index == 0 ? 0 : 12),
+                          padding: EdgeInsets.only(
+                            right: 24,
+                            top: index == 0 ? 0 : 12,
+                          ),
                           child: Text(
                             _resolve(pair.label),
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -353,7 +396,8 @@ class _FlowFormState extends State<FlowForm> {
                           padding: EdgeInsets.only(top: index == 0 ? 0 : 12),
                           child: Text(
                             pair.value,
-                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w500),
                           ),
                         ),
                       ),
@@ -461,7 +505,8 @@ class _FlowFormState extends State<FlowForm> {
     if (url.isEmpty || url.startsWith('{{')) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
-    if (uri.scheme.toLowerCase() != 'http' && uri.scheme.toLowerCase() != 'https') {
+    if (uri.scheme.toLowerCase() != 'http' &&
+        uri.scheme.toLowerCase() != 'https') {
       return;
     }
     await launchUrl(uri);
@@ -496,9 +541,12 @@ class _FlowFormState extends State<FlowForm> {
             border: const OutlineInputBorder(),
           ),
           obscureText: isPassword,
-          keyboardType: isPassword
-              ? TextInputType.visiblePassword
-              : TextInputType.emailAddress,
+          keyboardType: switch (type.toUpperCase()) {
+            _ when isPassword => TextInputType.visiblePassword,
+            'OTP_INPUT' || 'NUMBER_INPUT' => TextInputType.number,
+            'PHONE_INPUT' => TextInputType.phone,
+            _ => TextInputType.emailAddress,
+          },
           autocorrect: false,
         ),
       ),
@@ -532,8 +580,7 @@ class _FlowFormState extends State<FlowForm> {
             actionId,
             _controllers.map((k, v) => MapEntry(k, v.text)),
           );
-      final hint =
-          '$metaActionId $label ${_str(comp['icon'])}'.toLowerCase();
+      final hint = '$metaActionId $label ${_str(comp['icon'])}'.toLowerCase();
       if (hint.contains('google')) {
         return GoogleButton(
           label: label,
@@ -618,6 +665,37 @@ class _FlowFormState extends State<FlowForm> {
         child: isOutlinedVariant(variant)
             ? OutlinedButton(key: key, onPressed: onPressed, child: child)
             : FilledButton(key: key, onPressed: onPressed, child: child),
+      ),
+    );
+  }
+
+  /// A `RESEND` button: an outlined action that submits through [FlowForm.resend], with no inputs.
+  Widget _renderResend(
+    Map<String, dynamic> comp,
+    List<Map<String, dynamic>> actions,
+  ) {
+    final ref = _str(comp['ref'], fallback: _str(comp['id']));
+    final actionId = actions.isEmpty
+        ? _str(ref, fallback: 'submit')
+        : _findActionId(ref, actions);
+    final label = _resolve(comp['label'], fallback: widget.submitLabel);
+    final isSpinning = widget.isLoading && widget.loadingActionId == actionId;
+    final key = Key('thunderid-action-$actionId');
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Semantics(
+        identifier: 'thunderid-action-$actionId',
+        child: OutlinedButton(
+          key: key,
+          onPressed: widget.isLoading ? null : () => widget.resend!(actionId),
+          child: isSpinning
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(label),
+        ),
       ),
     );
   }
@@ -768,12 +846,17 @@ class _ErrorBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: colorScheme.onErrorContainer, size: 20),
+          Icon(
+            Icons.error_outline,
+            color: colorScheme.onErrorContainer,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
+              style:
+                  TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
             ),
           ),
         ],
@@ -785,4 +868,5 @@ class _ErrorBanner extends StatelessWidget {
 /// Whether a non-TRIGGER action asks for the outlined, secondary look rather than the filled primary
 /// one. A missing variant keeps the filled look, so flows that never set one render as before.
 @visibleForTesting
-bool isOutlinedVariant(String variant) => const {'SECONDARY', 'OUTLINED'}.contains(variant.toUpperCase());
+bool isOutlinedVariant(String variant) =>
+    const {'SECONDARY', 'OUTLINED'}.contains(variant.toUpperCase());

@@ -10,6 +10,7 @@ import 'backend/resolve_backend_endpoints.dart';
 import 'channel/thunderid_channel.dart';
 import 'management/permissions.dart';
 import 'management/thunderid_management_client.dart';
+import 'models/attribute_verification.dart';
 import 'models/flow_models.dart';
 import 'models/http_request.dart';
 import 'models/sign_in_options.dart';
@@ -56,7 +57,10 @@ class ThunderIDClient {
   /// Initializes the SDK. Must be called once before any other method (spec §5.1).
   Future<bool> initialize(ThunderIDConfig config) async {
     if (_initialized) {
-      throw const IAMException(ThunderIDErrorCode.alreadyInitialized, 'SDK is already initialized');
+      throw const IAMException(
+        ThunderIDErrorCode.alreadyInitialized,
+        'SDK is already initialized',
+      );
     }
     // Validated before anything else, so a malformed backend fails before any network call.
     final backendEndpoints = resolveBackendEndpoints(config);
@@ -143,7 +147,9 @@ class ThunderIDClient {
   /// the server responded with a `passkeyChallenge` in `data.additionalData`, and returns the
   /// flat `credentialId`/`clientDataJSON`/`authenticatorData`/`signature`/`userHandle` input map
   /// to resubmit via [signIn].
-  Future<Map<String, String>> performPasskeyAuthentication({required String requestOptionsJson}) async {
+  Future<Map<String, String>> performPasskeyAuthentication({
+    required String requestOptionsJson,
+  }) async {
     _requireInitialized();
     _refuseOnBackend('performPasskeyAuthentication');
     final result = await _channel.invokeMap('performPasskeyAuthentication', {
@@ -155,7 +161,9 @@ class ThunderIDClient {
   /// Performs a native WebAuthn attestation ceremony (registers a new passkey) after the server
   /// responded with `passkeyCreationOptions` in `data.additionalData`, and returns the flat
   /// `credentialId`/`clientDataJSON`/`attestationObject` input map to resubmit via [signIn].
-  Future<Map<String, String>> performPasskeyRegistration({required String creationOptionsJson}) async {
+  Future<Map<String, String>> performPasskeyRegistration({
+    required String creationOptionsJson,
+  }) async {
     _requireInitialized();
     _refuseOnBackend('performPasskeyRegistration');
     final result = await _channel.invokeMap('performPasskeyRegistration', {
@@ -189,7 +197,8 @@ class ThunderIDClient {
     try {
       final backend = _backend;
       if (backend != null) return await backend.handleRedirectCallback(url);
-      final result = await _channel.invokeMap('handleRedirectCallback', {'url': url});
+      final result =
+          await _channel.invokeMap('handleRedirectCallback', {'url': url});
       return User.fromMap(result);
     } finally {
       _isLoading = false;
@@ -205,9 +214,13 @@ class ThunderIDClient {
   Future<User> signInWithRedirect({SignInOptions? options}) async {
     _requireInitialized();
     final url = await buildSignInUrl(options: options);
-    final callbackUrl = await _channel.invoke<String>('openAuthSession', {'url': url});
+    final callbackUrl =
+        await _channel.invoke<String>('openAuthSession', {'url': url});
     if (callbackUrl == null || callbackUrl.isEmpty) {
-      throw const IAMException(ThunderIDErrorCode.invalidRedirectUri, 'The browser session returned no callback');
+      throw const IAMException(
+        ThunderIDErrorCode.invalidRedirectUri,
+        'The browser session returned no callback',
+      );
     }
     return handleRedirectCallback(callbackUrl);
   }
@@ -220,7 +233,9 @@ class ThunderIDClient {
     _isLoading = true;
     try {
       final backend = _backend;
-      if (backend != null) return await backend.signOut() ?? _afterSignOutUrl ?? '/';
+      if (backend != null) {
+        return await backend.signOut() ?? _afterSignOutUrl ?? '/';
+      }
       final result = await _channel.invoke<String>('signOut', {
         if (options != null) 'options': options.toMap(),
         if (sessionId != null) 'sessionId': sessionId,
@@ -298,7 +313,10 @@ class ThunderIDClient {
     return result.cast<String, dynamic>();
   }
 
-  Future<TokenResponse> exchangeToken(TokenExchangeRequestConfig config, {String? sessionId}) async {
+  Future<TokenResponse> exchangeToken(
+    TokenExchangeRequestConfig config, {
+    String? sessionId,
+  }) async {
     _requireInitialized();
     _refuseOnBackend('exchangeToken');
     final result = await _channel.invokeMap('exchangeToken', {
@@ -327,7 +345,9 @@ class ThunderIDClient {
   Future<User> getUser({Map<String, dynamic>? options}) async {
     _requireInitialized();
     final backend = _backend;
-    if (backend != null) return User((await backend.getSession()).user ?? const {});
+    if (backend != null) {
+      return User((await backend.getSession()).user ?? const {});
+    }
     final result = await _channel.invokeMap('getUser', options);
     return User.fromMap(result);
   }
@@ -391,6 +411,39 @@ class ThunderIDClient {
       'attribute': attribute,
       'newValue': newValue,
     });
+  }
+
+  // ── Self user attribute verification ────────────────────────────────────
+
+  /// Runs one step of self user attribute verification, a `SELF_SERVICE` flow the native SDK sends
+  /// with the signed-in user's access token, from which the server takes the user.
+  ///
+  /// Without [payload], starts verifying [attribute], such as `email`, with the flow named by
+  /// [handle]; the flow sends a code or a link to the attribute's stored value. With [payload],
+  /// continues that execution: [EmbeddedSignInPayload.flowId] is the step's execution ID, and a
+  /// resend submits its action with no inputs. `COMPLETE` means the server recorded the
+  /// verification, so read [UserProfile.verifiedAttributes] again to see it.
+  ///
+  /// The request goes to `{baseUrl}/flow/execute`. The native SDK refuses, before any request and
+  /// with [ThunderIDErrorCode.invalidInput], a start without a handle or attribute and a
+  /// continuation without an execution ID. A refusal from the server, an `ERROR` step or an HTTP
+  /// 4xx, is [ThunderIDErrorCode.verificationFailed], without the response body.
+  Future<EmbeddedFlowResponse> verifyAttribute({
+    String? attribute,
+    String handle = AttributeVerification.defaultFlowHandle,
+    EmbeddedSignInPayload? payload,
+  }) async {
+    _requireInitialized();
+    _refuseOnBackend('verifyAttribute');
+    final result = await _channel.invokeMap('verifyAttribute', {
+      if (payload != null)
+        'payload': payload.toMap()
+      else ...{
+        'attribute': attribute ?? '',
+        'handle': handle,
+      },
+    });
+    return EmbeddedFlowResponse.fromMap(result);
   }
 
   // ── Flow Meta ─────────────────────────────────────────────────────────────
@@ -467,7 +520,10 @@ class ThunderIDClient {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  void _initializeBackend(ResolvedBackendEndpoints endpoints, ThunderIDConfig config) {
+  void _initializeBackend(
+    ResolvedBackendEndpoints endpoints,
+    ThunderIDConfig config,
+  ) {
     // The native SDK is not initialized: the backend runs the OAuth flow, so nothing here talks to
     // the ThunderID server or reads its discovery metadata.
     final backend = BackendClient(

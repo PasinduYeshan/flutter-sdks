@@ -29,7 +29,8 @@ class CheckSkipped implements Exception {
   const CheckSkipped(this.reason);
 }
 
-typedef CheckRunner = Future<CheckResult> Function(ThunderIDState sdk, PlaygroundConfig config);
+typedef CheckRunner = Future<CheckResult> Function(
+    ThunderIDState sdk, PlaygroundConfig config);
 
 class CheckDef {
   final String id;
@@ -82,8 +83,10 @@ class ChecksController extends ChangeNotifier {
 
   CheckState stateOf(String id) => _states[id]!;
 
-  int get passCount => _states.values.where((s) => s.status == CheckStatus.pass).length;
-  int get unavailableCount => _states.values.where((s) => s.status == CheckStatus.unavailable).length;
+  int get passCount =>
+      _states.values.where((s) => s.status == CheckStatus.pass).length;
+  int get unavailableCount =>
+      _states.values.where((s) => s.status == CheckStatus.unavailable).length;
   int get runnableCount => _states.length - unavailableCount;
 
   Future<void> runOne(ThunderIDState sdk, CheckDef def) async {
@@ -93,23 +96,29 @@ class ChecksController extends ChangeNotifier {
     notifyListeners();
     CheckState next;
     try {
-      final result = await run(sdk, config).timeout(const Duration(seconds: 20));
-      next = CheckState(result.passed ? CheckStatus.pass : CheckStatus.fail, result.note);
+      final result =
+          await run(sdk, config).timeout(const Duration(seconds: 20));
+      next = CheckState(
+          result.passed ? CheckStatus.pass : CheckStatus.fail, result.note);
     } on CheckSkipped catch (e) {
       next = CheckState(CheckStatus.fail, e.reason);
     } on TimeoutException {
-      next = const CheckState(CheckStatus.fail, 'Timed out after 20s. Is the ThunderID server reachable?');
+      next = const CheckState(CheckStatus.fail,
+          'Timed out after 20s. Is the ThunderID server reachable?');
     } on IAMApiException catch (e) {
       next = CheckState(CheckStatus.fail, _describeApiError(e));
     } on MissingPluginException {
-      next = const CheckState(CheckStatus.fail, 'The native bridge does not implement this call on this platform.');
+      next = const CheckState(CheckStatus.fail,
+          'The native bridge does not implement this call on this platform.');
     } catch (e) {
       next = CheckState(CheckStatus.fail, describeError(e));
     }
     _states[def.id] = next;
     EventLog.instance.add(
       'check:${def.id}',
-      next.status == CheckStatus.pass ? 'pass · ${next.note}' : 'fail · ${next.note}',
+      next.status == CheckStatus.pass
+          ? 'pass · ${next.note}'
+          : 'fail · ${next.note}',
       kind: next.status == CheckStatus.pass ? LogKind.ok : LogKind.error,
     );
     notifyListeners();
@@ -140,13 +149,17 @@ final _log = EventLog.instance;
 
 void _requireInitialized(ThunderIDState sdk) {
   if (!sdk.initialized) {
-    throw CheckSkipped(sdk.error == null ? 'SDK is still initializing.' : 'SDK failed to initialize: ${sdk.error}');
+    throw CheckSkipped(sdk.error == null
+        ? 'SDK is still initializing.'
+        : 'SDK failed to initialize: ${sdk.error}');
   }
 }
 
 void _requireSignedIn(ThunderIDState sdk) {
   _requireInitialized(sdk);
-  if (!sdk.isSignedIn) throw const CheckSkipped('Requires a signed-in session. Sign in from the Session tab.');
+  if (!sdk.isSignedIn)
+    throw const CheckSkipped(
+        'Requires a signed-in session. Sign in from the Session tab.');
 }
 
 /// The management client, once there is a session whose token can authorize it.
@@ -161,16 +174,22 @@ String _describeApiError(IAMApiException e) => switch (e.code) {
         'HTTP 403 from ${e.operation}: the access token lacks the permission. Request it with THUNDERID_SCOPES.',
       ThunderIDErrorCode.notFound =>
         'HTTP 404 from ${e.operation}: no such resource, or the collection URL is wrong (see the endpoints check).',
-      ThunderIDErrorCode.networkError => '${e.operation}: the management API could not be reached.',
+      ThunderIDErrorCode.networkError =>
+        '${e.operation}: the management API could not be reached.',
       _ => describeError(e),
     };
 
-String _pageDetail(ManagementPage<Object?> page) => '${page.items.length} of ${page.totalResults}';
+String _pageDetail(ManagementPage<Object?> page) =>
+    '${page.items.length} of ${page.totalResults}';
 
 /// The first agent, which the agent relationship checks read from.
 Future<Agent> _firstAgent(ThunderIDManagementClient management) async {
-  final page = await _log.trace('getAgents', () => management.getAgents(limit: 1), detail: _pageDetail);
-  if (page.items.isEmpty) throw const CheckSkipped('No agents registered. Create one with the AgentCreate story.');
+  final page = await _log.trace(
+      'getAgents', () => management.getAgents(limit: 1),
+      detail: _pageDetail);
+  if (page.items.isEmpty)
+    throw const CheckSkipped(
+        'No agents registered. Create one with the AgentCreate story.');
   return page.items.first;
 }
 
@@ -192,16 +211,24 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       _requireInitialized(sdk);
       if (config.clientId == null) {
-        throw const CheckSkipped('Set THUNDERID_CLIENT_ID to enable redirect-based sign-in.');
+        throw const CheckSkipped(
+            'Set THUNDERID_CLIENT_ID to enable redirect-based sign-in.');
       }
-      final url = await _log.trace('buildSignInUrl', () => sdk.client.buildSignInUrl(), detail: (u) => u);
+      final url = await _log.trace(
+          'buildSignInUrl', () => sdk.client.buildSignInUrl(),
+          detail: (u) => u);
       final uri = Uri.tryParse(url);
       if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-        return CheckResult.fail('SDK returned an invalid authorize URL: "$url"');
+        return CheckResult.fail(
+            'SDK returned an invalid authorize URL: "$url"');
       }
       final params = uri.queryParameters;
-      final missing = ['client_id', 'redirect_uri', 'code_challenge'].where((p) => !params.containsKey(p)).toList();
-      if (missing.isNotEmpty) return CheckResult.fail('Authorize URL is missing ${missing.join(', ')}');
+      final missing = ['client_id', 'redirect_uri', 'code_challenge']
+          .where((p) => !params.containsKey(p))
+          .toList();
+      if (missing.isNotEmpty)
+        return CheckResult.fail(
+            'Authorize URL is missing ${missing.join(', ')}');
       return CheckResult.pass('Authorize URL built for ${uri.host}${uri.path}');
     },
   ),
@@ -213,21 +240,31 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       _requireInitialized(sdk);
       if (!sdk.client.isBackendMode()) {
-        throw const CheckSkipped('Set THUNDERID_BACKEND_URL to sign in through an app backend.');
+        throw const CheckSkipped(
+            'Set THUNDERID_BACKEND_URL to sign in through an app backend.');
       }
-      final url = await _log.trace('buildSignInUrl', () => sdk.client.buildSignInUrl());
+      final url =
+          await _log.trace('buildSignInUrl', () => sdk.client.buildSignInUrl());
       final uri = Uri.parse(url);
       final params = uri.queryParameters;
-      final missing = ['redirect_uri', 'code_challenge'].where((p) => !params.containsKey(p)).toList();
-      if (missing.isNotEmpty) return CheckResult.fail('Backend sign-in URL is missing ${missing.join(', ')}');
-      if (params['code_challenge_method'] != 'S256') return const CheckResult.fail('PKCE method is not S256');
+      final missing = ['redirect_uri', 'code_challenge']
+          .where((p) => !params.containsKey(p))
+          .toList();
+      if (missing.isNotEmpty)
+        return CheckResult.fail(
+            'Backend sign-in URL is missing ${missing.join(', ')}');
+      if (params['code_challenge_method'] != 'S256')
+        return const CheckResult.fail('PKCE method is not S256');
       try {
-        await sdk.client.exchangeToken(const TokenExchangeRequestConfig(subjectToken: 'x', subjectTokenType: 'x'));
-        return const CheckResult.fail('exchangeToken() was not refused on a backend');
+        await sdk.client.exchangeToken(const TokenExchangeRequestConfig(
+            subjectToken: 'x', subjectTokenType: 'x'));
+        return const CheckResult.fail(
+            'exchangeToken() was not refused on a backend');
       } on IAMException catch (e) {
         if (e.code != ThunderIDErrorCode.operationNotSupported) rethrow;
       }
-      return CheckResult.pass('Sign-in URL bound to PKCE for ${uri.host}${uri.path}; token operations refused');
+      return CheckResult.pass(
+          'Sign-in URL bound to PKCE for ${uri.host}${uri.path}; token operations refused');
     },
   ),
   CheckDef(
@@ -244,10 +281,12 @@ final List<CheckDef> checkDefs = [
           payload: const EmbeddedSignInPayload(actionId: 'init'),
           request: EmbeddedFlowRequestConfig(applicationId: appId),
         ),
-        detail: (r) => 'flowStatus=${r.flowStatus.name} stepId=${r.stepId ?? '-'}',
+        detail: (r) =>
+            'flowStatus=${r.flowStatus.name} stepId=${r.stepId ?? '-'}',
       );
       if (response.flowStatus == FlowStatus.error) {
-        return CheckResult.fail(response.failureReason ?? 'Flow returned an error');
+        return CheckResult.fail(
+            response.failureReason ?? 'Flow returned an error');
       }
       final inputs = (response.data?['inputs'] as List?)?.length ?? 0;
       final actions = (response.data?['actions'] as List?)?.length ?? 0;
@@ -266,12 +305,15 @@ final List<CheckDef> checkDefs = [
       try {
         await _log.trace(
           'performPasskeyAuthentication',
-          () => sdk.client.performPasskeyAuthentication(requestOptionsJson: 'playground-probe'),
+          () => sdk.client.performPasskeyAuthentication(
+              requestOptionsJson: 'playground-probe'),
         );
-        return const CheckResult.fail('Native bridge accepted malformed request options');
+        return const CheckResult.fail(
+            'Native bridge accepted malformed request options');
       } on IAMException catch (e) {
         if (e.code == ThunderIDErrorCode.passkeyNotSupported) {
-          return CheckResult.fail('Passkeys are not supported on this device: ${e.message}');
+          return CheckResult.fail(
+              'Passkeys are not supported on this device: ${e.message}');
         }
         const passkeyCodes = {
           ThunderIDErrorCode.passkeyFailed,
@@ -279,7 +321,8 @@ final List<CheckDef> checkDefs = [
           ThunderIDErrorCode.passkeyNoCredential,
         };
         if (passkeyCodes.contains(e.code)) {
-          return CheckResult.pass('Native passkey bridge reachable (${e.code.value} for probe options)');
+          return CheckResult.pass(
+              'Native passkey bridge reachable (${e.code.value} for probe options)');
         }
         rethrow;
       }
@@ -300,7 +343,8 @@ final List<CheckDef> checkDefs = [
     runsLast: true,
     run: (sdk, config) async {
       _requireSignedIn(sdk);
-      await _log.trace('signOut', () => sdk.client.signOut(), detail: (r) => 'redirect=$r');
+      await _log.trace('signOut', () => sdk.client.signOut(),
+          detail: (r) => 'redirect=$r');
       await sdk.refresh();
       final still = await sdk.client.isSignedIn();
       return still
@@ -317,13 +361,18 @@ final List<CheckDef> checkDefs = [
       _requireInitialized(sdk);
       final redirect = config.afterSignInUrl;
       if (config.clientId == null || redirect == null) {
-        throw const CheckSkipped('Set THUNDERID_CLIENT_ID and THUNDERID_AFTER_SIGN_IN_URL in .env.');
+        throw const CheckSkipped(
+            'Set THUNDERID_CLIENT_ID and THUNDERID_AFTER_SIGN_IN_URL in .env.');
       }
       final forged = Uri.parse(redirect).replace(
-        queryParameters: {'code': 'playground-probe', 'state': 'playground-probe'},
+        queryParameters: {
+          'code': 'playground-probe',
+          'state': 'playground-probe'
+        },
       );
       try {
-        await _log.trace('handleRedirectCallback', () => sdk.client.handleRedirectCallback(forged.toString()));
+        await _log.trace('handleRedirectCallback',
+            () => sdk.client.handleRedirectCallback(forged.toString()));
         return const CheckResult.fail('A forged callback was accepted');
       } on IAMException catch (e) {
         return CheckResult.pass('Forged callback rejected (${e.code.value})');
@@ -339,14 +388,25 @@ final List<CheckDef> checkDefs = [
     api: 'client.getAccessToken() · native auto refresh',
     run: (sdk, config) async {
       _requireSignedIn(sdk);
-      final token = await _log.trace('getAccessToken', () => sdk.client.getAccessToken(), detail: (t) => '${t.length} chars');
-      if (token.isEmpty) return const CheckResult.fail('getAccessToken() returned an empty token');
-      final claims = await _log.trace('decodeJwtToken', () => sdk.client.decodeJwtToken(token));
+      final token = await _log.trace(
+          'getAccessToken', () => sdk.client.getAccessToken(),
+          detail: (t) => '${t.length} chars');
+      if (token.isEmpty)
+        return const CheckResult.fail(
+            'getAccessToken() returned an empty token');
+      final claims = await _log.trace(
+          'decodeJwtToken', () => sdk.client.decodeJwtToken(token));
       final exp = claims['exp'];
-      if (exp is! num) return const CheckResult.pass('Valid access token returned (no exp claim)');
-      final remaining = DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000).difference(DateTime.now());
-      if (remaining.isNegative) return const CheckResult.fail('getAccessToken() returned an expired token');
-      return CheckResult.pass('Fresh token, expires in ${remaining.inMinutes}m ${remaining.inSeconds % 60}s');
+      if (exp is! num)
+        return const CheckResult.pass(
+            'Valid access token returned (no exp claim)');
+      final remaining = DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000)
+          .difference(DateTime.now());
+      if (remaining.isNegative)
+        return const CheckResult.fail(
+            'getAccessToken() returned an expired token');
+      return CheckResult.pass(
+          'Fresh token, expires in ${remaining.inMinutes}m ${remaining.inSeconds % 60}s');
     },
   ),
   CheckDef(
@@ -356,17 +416,23 @@ final List<CheckDef> checkDefs = [
     api: 'client.isSignedIn() · Keychain / EncryptedSharedPreferences',
     run: (sdk, config) async {
       _requireInitialized(sdk);
-      final signedIn = await _log.trace('isSignedIn', () => sdk.client.isSignedIn(), detail: (v) => '$v');
+      final signedIn = await _log.trace(
+          'isSignedIn', () => sdk.client.isSignedIn(),
+          detail: (v) => '$v');
       if (signedIn != sdk.isSignedIn) {
-        return CheckResult.fail('Native store says signedIn=$signedIn, provider says ${sdk.isSignedIn}');
+        return CheckResult.fail(
+            'Native store says signedIn=$signedIn, provider says ${sdk.isSignedIn}');
       }
       if (!signedIn) {
-        throw const CheckSkipped('No stored session. Sign in, relaunch the app, and run this again.');
+        throw const CheckSkipped(
+            'No stored session. Sign in, relaunch the app, and run this again.');
       }
       final token = await sdk.client.getAccessToken();
       return token.isEmpty
-          ? const CheckResult.fail('Session reported but no token in the native store')
-          : const CheckResult.pass('Session read back from the native secure store');
+          ? const CheckResult.fail(
+              'Session reported but no token in the native store')
+          : const CheckResult.pass(
+              'Session read back from the native secure store');
     },
   ),
   CheckDef(
@@ -376,18 +442,62 @@ final List<CheckDef> checkDefs = [
     api: 'client.getUser() · getUserProfile()',
     run: (sdk, config) async {
       _requireSignedIn(sdk);
-      final user = await _log.trace('getUser', () => sdk.client.getUser(), detail: (u) => 'sub=${u.sub ?? '-'}');
-      if (user.claims.isEmpty) return const CheckResult.fail('getUser() returned no claims');
+      final user = await _log.trace('getUser', () => sdk.client.getUser(),
+          detail: (u) => 'sub=${u.sub ?? '-'}');
+      if (user.claims.isEmpty)
+        return const CheckResult.fail('getUser() returned no claims');
       try {
         final profile = await _log.trace(
           'getUserProfile',
           () => sdk.client.getUserProfile(),
           detail: (p) => '${p.attributes.length} attributes',
         );
-        return CheckResult.pass('${user.claims.length} claims, ${profile.attributes.length} profile attributes');
+        return CheckResult.pass(
+            '${user.claims.length} claims, ${profile.attributes.length} profile attributes');
       } on IAMException catch (e) {
-        return CheckResult.pass('${user.claims.length} claims; profile unavailable (${e.code.value})');
+        return CheckResult.pass(
+            '${user.claims.length} claims; profile unavailable (${e.code.value})');
       }
+    },
+  ),
+  CheckDef(
+    id: 'verification',
+    section: 'Session',
+    name: 'Attribute verification',
+    api: 'UserProfile.verifiedAttributes · client.verifyAttribute()',
+    run: (sdk, config) async {
+      _requireSignedIn(sdk);
+      // Starting a verification sends a message, so this check reads the status and probes the
+      // handle rule only. The VerifyAttribute story runs a real verification on request.
+      try {
+        await _log.trace('verifyAttribute',
+            () => sdk.client.verifyAttribute(attribute: 'email', handle: ''));
+        return const CheckResult.fail(
+            'A verification without a handle was not refused');
+      } on IAMException catch (e) {
+        if (e.code != ThunderIDErrorCode.invalidInput) rethrow;
+      }
+      final schema =
+          await _log.trace('getUserSchema', () => sdk.client.getUserSchema());
+      final profile = await _log.trace(
+        'getUserProfile',
+        () => sdk.client.getUserProfile(),
+        detail: (p) =>
+            'verifiedAttributes=${p.verifiedAttributes?.keys.join(',') ?? 'not reported'}',
+      );
+      final verifiable = schema.keys
+          .where((name) =>
+              AttributeVerification.isVerifiableAttribute(name, schema))
+          .toList();
+      final verified = profile.verifiedAttributes;
+      if (verified == null) {
+        return CheckResult.pass(
+            'Handle rule enforced; server does not report verification (${verifiable.length} verifiable)');
+      }
+      final statuses = verifiable.map((name) =>
+          '$name ${verified.containsKey(name) ? 'verified' : 'unverified'}');
+      return CheckResult.pass(
+          'Handle rule enforced; ${statuses.isEmpty ? 'no verifiable attributes' : statuses.join(', ')}');
     },
   ),
   const CheckDef(
@@ -417,15 +527,21 @@ final List<CheckDef> checkDefs = [
           problems.add('${endpoint.key}: ${endpoint.error}');
           continue;
         }
-        if (override != null && url != override.replaceFirst(RegExp(r'/+$'), '')) {
-          problems.add('${endpoint.key}: override $override was not applied (got $url)');
+        if (override != null &&
+            url != override.replaceFirst(RegExp(r'/+$'), '')) {
+          problems.add(
+              '${endpoint.key}: override $override was not applied (got $url)');
         }
-        lines.add('${endpoint.key} → $url${override != null ? ' (override)' : ''}');
+        lines.add(
+            '${endpoint.key} → $url${override != null ? ' (override)' : ''}');
       }
-      _log.add('management:endpoints', lines.skip(1).join(' · '), kind: problems.isEmpty ? LogKind.ok : LogKind.error);
+      _log.add('management:endpoints', lines.skip(1).join(' · '),
+          kind: problems.isEmpty ? LogKind.ok : LogKind.error);
       if (problems.isNotEmpty) return CheckResult.fail(problems.join('\n'));
       final overridden = config.endpoints.length;
-      lines.add(overridden == 0 ? 'No overrides: every collection resolves under baseUrl.' : '$overridden of ${resolved.length} collections overridden.');
+      lines.add(overridden == 0
+          ? 'No overrides: every collection resolves under baseUrl.'
+          : '$overridden of ${resolved.length} collections overridden.');
       return CheckResult.pass(lines.join('\n'));
     },
   ),
@@ -436,10 +552,12 @@ final List<CheckDef> checkDefs = [
     api: 'IAMApiException · serverError · toManagementErrorMessage()',
     run: (sdk, config) async {
       // A client with its own fetcher answers 403 and 404 locally, so this needs no server.
-      Future<IAMApiException> failWith(int status, {String body = '{"description":"server detail"}'}) async {
+      Future<IAMApiException> failWith(int status,
+          {String body = '{"description":"server detail"}'}) async {
         final client = ThunderIDManagementClient(
           baseUrl: config.baseUrl,
-          fetcher: (request) async => ManagementResponse(statusCode: status, body: body),
+          fetcher: (request) async =>
+              ManagementResponse(statusCode: status, body: body),
         );
         try {
           await client.getRoles(limit: 1);
@@ -451,26 +569,37 @@ final List<CheckDef> checkDefs = [
 
       final forbidden = await failWith(403);
       final missing = await failWith(404);
-      if (forbidden.code != ThunderIDErrorCode.forbidden || missing.code != ThunderIDErrorCode.notFound) {
-        return CheckResult.fail('Mapped 403 → ${forbidden.code.value}, 404 → ${missing.code.value}');
+      if (forbidden.code != ThunderIDErrorCode.forbidden ||
+          missing.code != ThunderIDErrorCode.notFound) {
+        return CheckResult.fail(
+            'Mapped 403 → ${forbidden.code.value}, 404 → ${missing.code.value}');
       }
-      final message = toManagementErrorMessage(sdk.i18n.resolve, forbidden, 'admin.roles.list.error');
-      if (message == null || message.contains('server detail') || forbidden.message.contains('server detail')) {
-        return const CheckResult.fail('The server response body leaked into the error message');
+      final message = toManagementErrorMessage(
+          sdk.i18n.resolve, forbidden, 'admin.roles.list.error');
+      if (message == null ||
+          message.contains('server detail') ||
+          forbidden.message.contains('server detail')) {
+        return const CheckResult.fail(
+            'The server response body leaked into the error message');
       }
       // A body that is the server's error envelope is kept as serverError, with the server's code.
-      final envelope = await failWith(409, body: '{"code":"USR-1027","message":{"defaultValue":"In use"}}');
-      if (forbidden.serverError != null || envelope.serverError?.code != 'USR-1027') {
-        return CheckResult.fail('serverError: ${forbidden.serverError?.code} / ${envelope.serverError?.code}');
+      final envelope = await failWith(409,
+          body: '{"code":"USR-1027","message":{"defaultValue":"In use"}}');
+      if (forbidden.serverError != null ||
+          envelope.serverError?.code != 'USR-1027') {
+        return CheckResult.fail(
+            'serverError: ${forbidden.serverError?.code} / ${envelope.serverError?.code}');
       }
-      return CheckResult.pass('403 → forbidden, 404 → notFound, envelope → serverError USR-1027; UI text: "$message"');
+      return CheckResult.pass(
+          '403 → forbidden, 404 → notFound, envelope → serverError USR-1027; UI text: "$message"');
     },
   ),
   CheckDef(
     id: 'permissions',
     section: 'Management',
     name: 'Permission checks',
-    api: 'client.getGrantedPermissions() · hasPermission() · grantedPermissions()',
+    api:
+        'client.getGrantedPermissions() · hasPermission() · grantedPermissions()',
     run: (sdk, config) async {
       // The hierarchy rule first: a permission covers itself and every `:` path under it.
       const probes = [
@@ -482,7 +611,8 @@ final List<CheckDef> checkDefs = [
       ];
       for (final (granted, required, expected) in probes) {
         if (hasPermission(granted, required) != expected) {
-          return CheckResult.fail('hasPermission($granted, "$required") should be $expected');
+          return CheckResult.fail(
+              'hasPermission($granted, "$required") should be $expected');
         }
       }
       _requireSignedIn(sdk);
@@ -494,18 +624,24 @@ final List<CheckDef> checkDefs = [
       final notifier = sdk.grantedPermissions();
       try {
         await notifier.reload();
-        if (notifier.permissions.toSet().difference(granted.toSet()).isNotEmpty ||
+        if (notifier.permissions
+                .toSet()
+                .difference(granted.toSet())
+                .isNotEmpty ||
             notifier.permissions.length != granted.length) {
-          return CheckResult.fail('GrantedPermissionsNotifier read ${notifier.permissions}, client read $granted');
+          return CheckResult.fail(
+              'GrantedPermissionsNotifier read ${notifier.permissions}, client read $granted');
         }
       } finally {
         notifier.dispose();
       }
       if (granted.isEmpty) {
-        return const CheckResult.pass('Hierarchy rules hold; the token grants no permissions (add them with THUNDERID_SCOPES)');
+        return const CheckResult.pass(
+            'Hierarchy rules hold; the token grants no permissions (add them with THUNDERID_SCOPES)');
       }
       final shown = granted.take(4).join(', ');
-      return CheckResult.pass('Hierarchy rules hold; ${granted.length} granted: $shown${granted.length > 4 ? ', …' : ''}');
+      return CheckResult.pass(
+          'Hierarchy rules hold; ${granted.length} granted: $shown${granted.length > 4 ? ', …' : ''}');
     },
   ),
   CheckDef(
@@ -515,10 +651,17 @@ final List<CheckDef> checkDefs = [
     api: 'management.getGroups() · getGroup()',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page = await _log.trace('getGroups', () => management.getGroups(limit: 5), detail: _pageDetail);
-      if (page.items.isEmpty) return CheckResult.pass('No groups yet (totalResults=${page.totalResults})');
-      final group = await _log.trace('getGroup', () => management.getGroup(page.items.first.id), detail: (g) => g.name);
-      return CheckResult.pass('${page.totalResults} groups; getGroup("${group.name}") ok');
+      final page = await _log.trace(
+          'getGroups', () => management.getGroups(limit: 5),
+          detail: _pageDetail);
+      if (page.items.isEmpty)
+        return CheckResult.pass(
+            'No groups yet (totalResults=${page.totalResults})');
+      final group = await _log.trace(
+          'getGroup', () => management.getGroup(page.items.first.id),
+          detail: (g) => g.name);
+      return CheckResult.pass(
+          '${page.totalResults} groups; getGroup("${group.name}") ok');
     },
   ),
   CheckDef(
@@ -528,8 +671,12 @@ final List<CheckDef> checkDefs = [
     api: 'management.getGroupMembers(groupId)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final groups = await _log.trace('getGroups', () => management.getGroups(limit: 1), detail: _pageDetail);
-      if (groups.items.isEmpty) throw const CheckSkipped('No groups. Create one with the GroupCreate story.');
+      final groups = await _log.trace(
+          'getGroups', () => management.getGroups(limit: 1),
+          detail: _pageDetail);
+      if (groups.items.isEmpty)
+        throw const CheckSkipped(
+            'No groups. Create one with the GroupCreate story.');
       final group = groups.items.first;
       final members = await _log.trace(
         'getGroupMembers',
@@ -540,8 +687,11 @@ final List<CheckDef> checkDefs = [
       for (final member in members.items) {
         byType.update(member.type.value, (n) => n + 1, ifAbsent: () => 1);
       }
-      final summary = byType.isEmpty ? 'no members' : byType.entries.map((e) => '${e.value} ${e.key}').join(', ');
-      return CheckResult.pass('"${group.name}": ${members.totalResults} members ($summary)');
+      final summary = byType.isEmpty
+          ? 'no members'
+          : byType.entries.map((e) => '${e.value} ${e.key}').join(', ');
+      return CheckResult.pass(
+          '"${group.name}": ${members.totalResults} members ($summary)');
     },
   ),
   CheckDef(
@@ -551,22 +701,31 @@ final List<CheckDef> checkDefs = [
     api: 'management.getRoles() · getRole() · managementResources.rolesQuery()',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page = await _log.trace('getRoles', () => management.getRoles(limit: 5), detail: _pageDetail);
+      final page = await _log.trace(
+          'getRoles', () => management.getRoles(limit: 5),
+          detail: _pageDetail);
       // The shared state layer must see the same collection through its own query.
       final query = sdk.managementResources.rolesQuery(limit: 5);
       try {
         final viaState = await query.refetch();
         if (query.error != null) throw query.error!;
         if (viaState?.totalResults != page.totalResults) {
-          return CheckResult.fail('rolesQuery saw ${viaState?.totalResults} roles, getRoles saw ${page.totalResults}');
+          return CheckResult.fail(
+              'rolesQuery saw ${viaState?.totalResults} roles, getRoles saw ${page.totalResults}');
         }
       } finally {
         query.dispose();
       }
-      if (page.items.isEmpty) return CheckResult.pass('No roles yet (totalResults=${page.totalResults})');
-      final role = await _log.trace('getRole', () => management.getRole(page.items.first.id), detail: (r) => r.name);
-      final permissions = role.permissions.fold<int>(0, (n, p) => n + p.permissions.length);
-      return CheckResult.pass('${page.totalResults} roles; "${role.name}" grants $permissions permissions; rolesQuery agrees');
+      if (page.items.isEmpty)
+        return CheckResult.pass(
+            'No roles yet (totalResults=${page.totalResults})');
+      final role = await _log.trace(
+          'getRole', () => management.getRole(page.items.first.id),
+          detail: (r) => r.name);
+      final permissions =
+          role.permissions.fold<int>(0, (n, p) => n + p.permissions.length);
+      return CheckResult.pass(
+          '${page.totalResults} roles; "${role.name}" grants $permissions permissions; rolesQuery agrees');
     },
   ),
   CheckDef(
@@ -576,19 +735,28 @@ final List<CheckDef> checkDefs = [
     api: 'management.getRoleAssignments(roleId, type:)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final roles = await _log.trace('getRoles', () => management.getRoles(limit: 1), detail: _pageDetail);
-      if (roles.items.isEmpty) throw const CheckSkipped('No roles. Create one with the RoleCreate story.');
+      final roles = await _log.trace(
+          'getRoles', () => management.getRoles(limit: 1),
+          detail: _pageDetail);
+      if (roles.items.isEmpty)
+        throw const CheckSkipped(
+            'No roles. Create one with the RoleCreate story.');
       final role = roles.items.first;
-      final all = await _log.trace('getRoleAssignments', () => management.getRoleAssignments(role.id), detail: _pageDetail);
+      final all = await _log.trace(
+          'getRoleAssignments', () => management.getRoleAssignments(role.id),
+          detail: _pageDetail);
       final users = await _log.trace(
         'getRoleAssignments(type: user)',
-        () => management.getRoleAssignments(role.id, type: RoleAssigneeType.user),
+        () =>
+            management.getRoleAssignments(role.id, type: RoleAssigneeType.user),
         detail: _pageDetail,
       );
       if (users.items.any((a) => a.type != RoleAssigneeType.user)) {
-        return const CheckResult.fail('The type filter returned assignees of other types');
+        return const CheckResult.fail(
+            'The type filter returned assignees of other types');
       }
-      return CheckResult.pass('"${role.name}": ${all.totalResults} assignees, ${users.totalResults} of them users');
+      return CheckResult.pass(
+          '"${role.name}": ${all.totalResults} assignees, ${users.totalResults} of them users');
     },
   ),
   CheckDef(
@@ -599,10 +767,15 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       final management = _management(sdk);
       final userId = sdk.user?.sub;
-      if (userId == null || userId.isEmpty) throw const CheckSkipped('The signed-in user has no sub claim.');
-      final page = await _log.trace('getUserGroups', () => management.getUserGroups(userId), detail: _pageDetail);
+      if (userId == null || userId.isEmpty)
+        throw const CheckSkipped('The signed-in user has no sub claim.');
+      final page = await _log.trace(
+          'getUserGroups', () => management.getUserGroups(userId),
+          detail: _pageDetail);
       final names = page.items.map((g) => g.name).take(3).join(', ');
-      return CheckResult.pass(page.items.isEmpty ? 'Not a member of any group' : '${page.totalResults} groups: $names');
+      return CheckResult.pass(page.items.isEmpty
+          ? 'Not a member of any group'
+          : '${page.totalResults} groups: $names');
     },
   ),
   CheckDef(
@@ -613,15 +786,19 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       final management = _management(sdk);
       final userId = sdk.user?.sub;
-      if (userId == null || userId.isEmpty) throw const CheckSkipped('The signed-in user has no sub claim.');
+      if (userId == null || userId.isEmpty)
+        throw const CheckSkipped('The signed-in user has no sub claim.');
       final usages = await _log.trace(
         'getUserUsages',
         () => management.getUserUsages(userId),
         detail: (u) => '${u.count} usages',
       );
-      final summary = usages.summary?.entries.map((e) => '${e.value} ${e.key}').join(', ');
+      final summary =
+          usages.summary?.entries.map((e) => '${e.value} ${e.key}').join(', ');
       return CheckResult.pass(
-        usages.usages.isEmpty ? 'Nothing references the signed-in user' : '${usages.count} usages${summary == null ? '' : ': $summary'}',
+        usages.usages.isEmpty
+            ? 'Nothing references the signed-in user'
+            : '${usages.count} usages${summary == null ? '' : ': $summary'}',
       );
     },
   ),
@@ -632,8 +809,11 @@ final List<CheckDef> checkDefs = [
     api: 'management.getUserTypes() · getUserType(id)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page = await _log.trace('getUserTypes', () => management.getUserTypes(limit: 10), detail: _pageDetail);
-      if (page.items.isEmpty) return const CheckResult.pass('No user types defined');
+      final page = await _log.trace(
+          'getUserTypes', () => management.getUserTypes(limit: 10),
+          detail: _pageDetail);
+      if (page.items.isEmpty)
+        return const CheckResult.pass('No user types defined');
       final first = page.items.first;
       final type = await _log.trace(
         'getUserType',
@@ -653,15 +833,22 @@ final List<CheckDef> checkDefs = [
     api: 'management.getAgentTypes() · getAgentType(id)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page = await _log.trace('getAgentTypes', () => management.getAgentTypes(limit: 10), detail: _pageDetail);
-      final names = page.items.map((t) => t.displayName.isEmpty ? t.handle : t.displayName).take(3).join(', ');
-      if (page.items.isEmpty) return const CheckResult.pass('No agent types defined');
+      final page = await _log.trace(
+          'getAgentTypes', () => management.getAgentTypes(limit: 10),
+          detail: _pageDetail);
+      final names = page.items
+          .map((t) => t.displayName.isEmpty ? t.handle : t.displayName)
+          .take(3)
+          .join(', ');
+      if (page.items.isEmpty)
+        return const CheckResult.pass('No agent types defined');
       final type = await _log.trace(
         'getAgentType',
         () => management.getAgentType(page.items.first.id),
         detail: (t) => '${t.schema.length} attributes',
       );
-      return CheckResult.pass('${page.totalResults} types: $names; "${type.handle}" has ${type.schema.length} attributes');
+      return CheckResult.pass(
+          '${page.totalResults} types: $names; "${type.handle}" has ${type.schema.length} attributes');
     },
   ),
   CheckDef(
@@ -671,8 +858,11 @@ final List<CheckDef> checkDefs = [
     api: 'management.getApplications() · getApplication(id)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page = await _log.trace('getApplications', () => management.getApplications(limit: 5), detail: _pageDetail);
-      if (page.items.isEmpty) return const CheckResult.pass('No applications registered');
+      final page = await _log.trace(
+          'getApplications', () => management.getApplications(limit: 5),
+          detail: _pageDetail);
+      if (page.items.isEmpty)
+        return const CheckResult.pass('No applications registered');
       final application = await _log.trace(
         'getApplication',
         () => management.getApplication(page.items.first.id),
@@ -696,11 +886,13 @@ final List<CheckDef> checkDefs = [
       final management = _management(sdk);
       final resolved = await _log.trace(
         'resolveAdministrationFlows',
-        () => management.resolveAdministrationFlows(AdministrationFlowConfigKey.values),
+        () => management
+            .resolveAdministrationFlows(AdministrationFlowConfigKey.values),
         detail: (r) => '${r.length} configured',
       );
       if (resolved.isEmpty) {
-        return const CheckResult.pass('No administration flows configured: flow mode calls the API directly');
+        return const CheckResult.pass(
+            'No administration flows configured: flow mode calls the API directly');
       }
       return CheckResult.pass(
         '${resolved.length} of ${AdministrationFlowConfigKey.values.length} operations run a flow: '
@@ -712,12 +904,15 @@ final List<CheckDef> checkDefs = [
     id: 'organizationUnits',
     section: 'Management',
     name: 'Organization units',
-    api: 'management.getOrganizationUnits() · getOrganizationUnitByPath(path) · getOrganizationUnitChildren()',
+    api:
+        'management.getOrganizationUnits() · getOrganizationUnitByPath(path) · getOrganizationUnitChildren()',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page =
-          await _log.trace('getOrganizationUnits', () => management.getOrganizationUnits(limit: 5), detail: _pageDetail);
-      if (page.items.isEmpty) return const CheckResult.pass('No organization units');
+      final page = await _log.trace('getOrganizationUnits',
+          () => management.getOrganizationUnits(limit: 5),
+          detail: _pageDetail);
+      if (page.items.isEmpty)
+        return const CheckResult.pass('No organization units');
       final first = page.items.first;
       final unit = await _log.trace(
         'getOrganizationUnitByPath',
@@ -726,7 +921,8 @@ final List<CheckDef> checkDefs = [
       );
       final children = await _log.trace(
         'getOrganizationUnitChildren',
-        () => management.getOrganizationUnitChildren(path: first.handle, limit: 5),
+        () => management.getOrganizationUnitChildren(
+            path: first.handle, limit: 5),
         detail: _pageDetail,
       );
       return CheckResult.pass(
@@ -741,13 +937,18 @@ final List<CheckDef> checkDefs = [
     api: 'management.getResourceServers() · getResources(id) · getActions(id)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final page =
-          await _log.trace('getResourceServers', () => management.getResourceServers(limit: 5), detail: _pageDetail);
-      if (page.items.isEmpty) return const CheckResult.pass('No resource servers');
+      final page = await _log.trace(
+          'getResourceServers', () => management.getResourceServers(limit: 5),
+          detail: _pageDetail);
+      if (page.items.isEmpty)
+        return const CheckResult.pass('No resource servers');
       final server = page.items.first;
-      final resources =
-          await _log.trace('getResources', () => management.getResources(server.id, limit: 5), detail: _pageDetail);
-      final actions = await _log.trace('getActions', () => management.getActions(server.id, limit: 5), detail: _pageDetail);
+      final resources = await _log.trace(
+          'getResources', () => management.getResources(server.id, limit: 5),
+          detail: _pageDetail);
+      final actions = await _log.trace(
+          'getActions', () => management.getActions(server.id, limit: 5),
+          detail: _pageDetail);
       return CheckResult.pass(
         '${page.totalResults} servers; "${server.name}" has ${resources.totalResults} resources and '
         '${actions.totalResults} actions',
@@ -758,17 +959,21 @@ final List<CheckDef> checkDefs = [
     id: 'connectionsAndFlows',
     section: 'Management',
     name: 'Connections and flows',
-    api: 'management.getConnections() · getConnectionsMeta() · getFlows() · getFlowVersions(id)',
+    api:
+        'management.getConnections() · getConnectionsMeta() · getFlows() · getFlowVersions(id)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final connections =
-          await _log.trace('getConnections', () => management.getConnections(limit: 5), detail: _pageDetail);
+      final connections = await _log.trace(
+          'getConnections', () => management.getConnections(limit: 5),
+          detail: _pageDetail);
       final meta = await _log.trace(
         'getConnectionsMeta',
         management.getConnectionsMeta,
         detail: (m) => '${m.vendors.length} vendors',
       );
-      final flows = await _log.trace('getFlows', () => management.getFlows(limit: 5), detail: _pageDetail);
+      final flows = await _log.trace(
+          'getFlows', () => management.getFlows(limit: 5),
+          detail: _pageDetail);
       var versions = '';
       if (flows.items.isNotEmpty) {
         final history = await _log.trace(
@@ -776,7 +981,8 @@ final List<CheckDef> checkDefs = [
           () => management.getFlowVersions(flows.items.first.id),
           detail: (v) => '${v.totalVersions} versions',
         );
-        versions = '; "${flows.items.first.name}" has ${history.totalVersions} versions';
+        versions =
+            '; "${flows.items.first.name}" has ${history.totalVersions} versions';
       }
       return CheckResult.pass(
         '${connections.totalResults} connections (${meta.vendors.length} vendors); '
@@ -788,16 +994,23 @@ final List<CheckDef> checkDefs = [
     id: 'designAndTranslations',
     section: 'Management',
     name: 'Design, translations and templates',
-    api: 'management.getThemes() · getLayouts() · getLanguages() · getNotificationTemplates(channel)',
+    api:
+        'management.getThemes() · getLayouts() · getLanguages() · getNotificationTemplates(channel)',
     run: (sdk, config) async {
       final management = _management(sdk);
-      final themes = await _log.trace('getThemes', () => management.getThemes(limit: 5), detail: _pageDetail);
-      final layouts = await _log.trace('getLayouts', () => management.getLayouts(limit: 5), detail: _pageDetail);
-      final languages =
-          await _log.trace('getLanguages', management.getLanguages, detail: (l) => '${l.length} languages');
+      final themes = await _log.trace(
+          'getThemes', () => management.getThemes(limit: 5),
+          detail: _pageDetail);
+      final layouts = await _log.trace(
+          'getLayouts', () => management.getLayouts(limit: 5),
+          detail: _pageDetail);
+      final languages = await _log.trace(
+          'getLanguages', management.getLanguages,
+          detail: (l) => '${l.length} languages');
       final templates = await _log.trace(
         'getNotificationTemplates',
-        () => management.getNotificationTemplates(NotificationChannel.email, limit: 5),
+        () => management.getNotificationTemplates(NotificationChannel.email,
+            limit: 5),
         detail: _pageDetail,
       );
       return CheckResult.pass(
@@ -810,16 +1023,22 @@ final List<CheckDef> checkDefs = [
     id: 'configurationAndGateways',
     section: 'Management',
     name: 'Server configuration, variables and gateways',
-    api: 'management.getServerConfigs() · getVariables() · getSecrets() · getGateways() · getConfigurationVersions()',
+    api:
+        'management.getServerConfigs() · getVariables() · getSecrets() · getGateways() · getConfigurationVersions()',
     run: (sdk, config) async {
       // Read only. Secrets come back without their values.
       final management = _management(sdk);
-      final sections =
-          await _log.trace('getServerConfigs', management.getServerConfigs, detail: (n) => '${n.length} sections');
-      final variables = await _log.trace('getVariables', () => management.getVariables(limit: 5), detail: _pageDetail);
-      final secrets = await _log.trace('getSecrets', () => management.getSecrets(limit: 5), detail: _pageDetail);
-      final gateways =
-          await _log.trace('getGateways', management.getGateways, detail: (g) => '${g.length} gateways');
+      final sections = await _log.trace(
+          'getServerConfigs', management.getServerConfigs,
+          detail: (n) => '${n.length} sections');
+      final variables = await _log.trace(
+          'getVariables', () => management.getVariables(limit: 5),
+          detail: _pageDetail);
+      final secrets = await _log.trace(
+          'getSecrets', () => management.getSecrets(limit: 5),
+          detail: _pageDetail);
+      final gateways = await _log.trace('getGateways', management.getGateways,
+          detail: (g) => '${g.length} gateways');
       final versions = await _log.trace(
         'getConfigurationVersions',
         management.getConfigurationVersions,
@@ -839,8 +1058,11 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       final management = _management(sdk);
       final agent = await _firstAgent(management);
-      final page = await _log.trace('getAgentGroups', () => management.getAgentGroups(agent.id), detail: _pageDetail);
-      return CheckResult.pass('"${agent.name}" is in ${page.totalResults} groups');
+      final page = await _log.trace(
+          'getAgentGroups', () => management.getAgentGroups(agent.id),
+          detail: _pageDetail);
+      return CheckResult.pass(
+          '"${agent.name}" is in ${page.totalResults} groups');
     },
   ),
   CheckDef(
@@ -851,9 +1073,12 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       final management = _management(sdk);
       final agent = await _firstAgent(management);
-      final page = await _log.trace('getAgentRoles', () => management.getAgentRoles(agent.id), detail: _pageDetail);
+      final page = await _log.trace(
+          'getAgentRoles', () => management.getAgentRoles(agent.id),
+          detail: _pageDetail);
       final names = page.items.take(3).join(', ');
-      return CheckResult.pass('"${agent.name}" has ${page.totalResults} roles${names.isEmpty ? '' : ': $names'}');
+      return CheckResult.pass(
+          '"${agent.name}" has ${page.totalResults} roles${names.isEmpty ? '' : ': $names'}');
     },
   ),
 
@@ -866,14 +1091,16 @@ final List<CheckDef> checkDefs = [
     run: (sdk, config) async {
       _requireInitialized(sdk);
       final mode = sdk.preferences?.theme?.mode;
-      if (mode == null) return const CheckResult.fail('No ThemePreferences in the SDK config');
+      if (mode == null)
+        return const CheckResult.fail('No ThemePreferences in the SDK config');
       final appId = _requireAppId(config);
       final meta = await _log.trace(
         'getFlowMeta',
         () => sdk.client.getFlowMeta(appId),
         detail: (m) => 'keys=${m.keys.join(',')}',
       );
-      return CheckResult.pass('mode=$mode; flow meta resolved (${meta.length} keys)');
+      return CheckResult.pass(
+          'mode=$mode; flow meta resolved (${meta.length} keys)');
     },
   ),
   CheckDef(
@@ -890,11 +1117,16 @@ final List<CheckDef> checkDefs = [
         final es = sdk.i18n.resolve('signIn.button');
         final fallback = sdk.i18n.resolve('signIn.password');
         _log.add('i18n:resolve', 'fr-FR="$fr" es-ES="$es"', kind: LogKind.ok);
-        if (fr != playgroundBundles['fr-FR']!['signIn.button'] || es != playgroundBundles['es-ES']!['signIn.button']) {
-          return CheckResult.fail('Bundles not applied: fr-FR="$fr", es-ES="$es"');
+        if (fr != playgroundBundles['fr-FR']!['signIn.button'] ||
+            es != playgroundBundles['es-ES']!['signIn.button']) {
+          return CheckResult.fail(
+              'Bundles not applied: fr-FR="$fr", es-ES="$es"');
         }
-        if (fallback != 'Password') return CheckResult.fail('Fallback to built-in strings failed: "$fallback"');
-        return CheckResult.pass('fr-FR "$fr", es-ES "$es", fallback to built-in English');
+        if (fallback != 'Password')
+          return CheckResult.fail(
+              'Fallback to built-in strings failed: "$fallback"');
+        return CheckResult.pass(
+            'fr-FR "$fr", es-ES "$es", fallback to built-in English');
       } finally {
         sdk.setLocale(previous);
       }

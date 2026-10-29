@@ -66,9 +66,14 @@ class ThunderIDState extends State<ThunderIDProvider> {
   String? get error => _error;
   ThunderIDPreferences? get preferences => widget.config.preferences;
 
+  /// The configuration the provider initialized the client with.
+  ThunderIDConfig get config => widget.config;
+
   /// Mirrors [ThunderIDConfig.fetchUserProfile]. Off when sign-in runs on a backend: the profile
   /// comes from the claims the backend's session reports.
-  bool get fetchUserProfileEnabled => widget.config.fetchUserProfile && widget.config.endpoints?.backend == null;
+  bool get fetchUserProfileEnabled =>
+      widget.config.fetchUserProfile &&
+      widget.config.endpoints?.backend == null;
 
   ManagementResources? _managementResources;
 
@@ -78,12 +83,15 @@ class ThunderIDState extends State<ThunderIDProvider> {
 
   /// The shared state layer over [management]: queries and mutations created from it reload
   /// each other. Available once [initialized] is true.
-  ManagementResources get managementResources => _managementResources ??= ManagementResources(management);
+  ManagementResources get managementResources =>
+      _managementResources ??= ManagementResources(management);
 
   /// A [GrantedPermissionsNotifier] over the signed-in user's access token. The caller owns and
   /// disposes it.
-  GrantedPermissionsNotifier grantedPermissions() =>
-      GrantedPermissionsNotifier(() => client.getAccessToken(), signedIn: initialized && isSignedIn);
+  GrantedPermissionsNotifier grantedPermissions() => GrantedPermissionsNotifier(
+        () => client.getAccessToken(),
+        signedIn: initialized && isSignedIn,
+      );
 
   /// The organization unit the signed-in user belongs to, from the `ouId` claim, used by the
   /// admin create components when the application does not pass one.
@@ -114,8 +122,11 @@ class ThunderIDState extends State<ThunderIDProvider> {
   Future<void> _init() async {
     setState(() => _isLoading = true);
     try {
-      await client.initialize(widget.config).timeout(const Duration(seconds: 15));
-      final signedIn = await client.isSignedIn().timeout(const Duration(seconds: 10));
+      await client
+          .initialize(widget.config)
+          .timeout(const Duration(seconds: 15));
+      final signedIn =
+          await client.isSignedIn().timeout(const Duration(seconds: 10));
       if (signedIn) {
         _user = await client.getUser().timeout(const Duration(seconds: 10));
         _syncUserProfile();
@@ -123,7 +134,8 @@ class ThunderIDState extends State<ThunderIDProvider> {
       _initialized = true;
       _error = null;
     } on TimeoutException {
-      _error = 'Initialization timed out. Verify THUNDERID_BASE_URL and that the ThunderID server is reachable.';
+      _error =
+          'Initialization timed out. Verify THUNDERID_BASE_URL and that the ThunderID server is reachable.';
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -156,6 +168,20 @@ class ThunderIDState extends State<ThunderIDProvider> {
     // Write through to the native cache as well: getUser() short-circuits on it,
     // so a later refresh() would otherwise resurrect the pre-merge claims.
     unawaited(client.setCachedUser(merged).catchError((Object _) {}));
+  }
+
+  /// Reads `/users/me` again and merges it into [user], as after a verification the server
+  /// recorded. Returns the profile, or null when it could not be read or [fetchUserProfileEnabled]
+  /// is off: a failed read leaves the status stale, not broken.
+  Future<UserProfile?> reloadUserProfile() async {
+    if (!fetchUserProfileEnabled) return null;
+    try {
+      final profile = await client.getUserProfile();
+      mergeUserProfile(profile);
+      return profile;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Pulls `/users/me` in the background and merges it into [user].

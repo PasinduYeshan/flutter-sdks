@@ -70,7 +70,9 @@ class ThunderAccountColors {
   /// Follows the OS-level brightness directly rather than the app's `Theme`, so these
   /// components support dark mode even in an app that never configured a `darkTheme`.
   factory ThunderAccountColors.of(BuildContext context) =>
-      MediaQuery.platformBrightnessOf(context) == Brightness.dark ? dark : light;
+      MediaQuery.platformBrightnessOf(context) == Brightness.dark
+          ? dark
+          : light;
 }
 
 /// A label/value row with a trailing "Edit" link and a bottom divider, matching the design's
@@ -88,6 +90,9 @@ class ThunderAccountRow extends StatelessWidget {
   /// rather than relying on that ambiguous text.
   final String? identifier;
 
+  /// Shown under the value, such as the value's verification status.
+  final Widget? detail;
+
   const ThunderAccountRow({
     super.key,
     required this.label,
@@ -96,6 +101,7 @@ class ThunderAccountRow extends StatelessWidget {
     required this.onEdit,
     this.showDivider = true,
     this.identifier,
+    this.detail,
   });
 
   @override
@@ -122,7 +128,9 @@ class ThunderAccountRow extends StatelessWidget {
     );
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: showDivider ? Border(bottom: BorderSide(color: colors.divider)) : null,
+        border: showDivider
+            ? Border(bottom: BorderSide(color: colors.divider))
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -133,16 +141,28 @@ class ThunderAccountRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: TextStyle(fontSize: 15, color: colors.textSecondary)),
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 15, color: colors.textSecondary),
+                  ),
                   if (value.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(value, style: TextStyle(fontSize: 16, color: colors.text)),
+                    Text(
+                      value,
+                      style: TextStyle(fontSize: 16, color: colors.text),
+                    ),
+                  ],
+                  if (detail != null) ...[
+                    const SizedBox(height: 6),
+                    detail!,
                   ],
                 ],
               ),
             ),
             if (onEdit != null)
-              identifier == null ? editLink : Semantics(identifier: identifier, child: editLink),
+              identifier == null
+                  ? editLink
+                  : Semantics(identifier: identifier, child: editLink),
           ],
         ),
       ),
@@ -201,13 +221,15 @@ class _ThunderAccountFieldState extends State<ThunderAccountField> {
           decoration: InputDecoration(
             labelText: widget.label,
             labelStyle: TextStyle(fontSize: 16, color: colors.textSecondary),
-            floatingLabelStyle: TextStyle(fontSize: 12, color: colors.textSecondary),
+            floatingLabelStyle:
+                TextStyle(fontSize: 12, color: colors.textSecondary),
             floatingLabelBehavior: FloatingLabelBehavior.auto,
             isDense: true,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
             suffixIcon: widget.obscureText
                 ? Semantics(
                     identifier: '${widget.identifier}-toggleVisibility',
@@ -215,7 +237,9 @@ class _ThunderAccountFieldState extends State<ThunderAccountField> {
                       key: Key('${widget.identifier}-toggleVisibility'),
                       onPressed: () => setState(() => _obscured = !_obscured),
                       icon: Icon(
-                        _obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        _obscured
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                         size: 20,
                         color: colors.textSecondary,
                       ),
@@ -255,12 +279,21 @@ class ThunderPillButton extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: colors.pillBackground,
               foregroundColor: colors.pillText,
-              disabledBackgroundColor: colors.pillBackground.withValues(alpha: 0.4),
+              disabledBackgroundColor:
+                  colors.pillBackground.withValues(alpha: 0.4),
               disabledForegroundColor: colors.pillText.withValues(alpha: 0.7),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: Text(label, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ),
@@ -294,9 +327,17 @@ class ThunderOutlineButton extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: colors.accent,
               side: BorderSide(color: colors.accent, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: Text(label, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ),
@@ -340,7 +381,10 @@ class ThunderAccountAvatar extends StatelessWidget {
             ),
             child: Container(
               padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(shape: BoxShape.circle, color: colors.pageBackground),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colors.pageBackground,
+              ),
               child: UserAvatar(size: size - 10),
             ),
           ),
@@ -352,7 +396,9 @@ class ThunderAccountAvatar extends StatelessWidget {
                 identifier: 'thunderid-action-editAvatar',
                 child: Material(
                   color: colors.text,
-                  shape: CircleBorder(side: BorderSide(color: colors.pageBackground, width: 2)),
+                  shape: CircleBorder(
+                    side: BorderSide(color: colors.pageBackground, width: 2),
+                  ),
                   child: InkWell(
                     key: const Key('thunderid-action-editAvatar'),
                     customBorder: const CircleBorder(),
@@ -445,11 +491,19 @@ class ThunderAccountEditPage extends StatelessWidget {
                           onTap: onCancel,
                           borderRadius: BorderRadius.circular(8),
                           child: Padding(
-                            padding: const EdgeInsets.only(top: 6, bottom: 6, right: 8),
+                            padding: const EdgeInsets.only(
+                              top: 6,
+                              bottom: 6,
+                              right: 8,
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.chevron_left, color: colors.text, size: 26),
+                                Icon(
+                                  Icons.chevron_left,
+                                  color: colors.text,
+                                  size: 26,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   backLabel,
@@ -476,13 +530,20 @@ class ThunderAccountEditPage extends StatelessWidget {
                       const SizedBox(height: 10),
                       Text(
                         description,
-                        style: TextStyle(fontSize: 14, color: colors.textSecondary, height: 1.4),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colors.textSecondary,
+                          height: 1.4,
+                        ),
                       ),
                       const SizedBox(height: 28),
                       child,
                       if (errorText != null) ...[
                         const SizedBox(height: 8),
-                        Text(errorText!, style: TextStyle(fontSize: 13, color: colors.error)),
+                        Text(
+                          errorText!,
+                          style: TextStyle(fontSize: 13, color: colors.error),
+                        ),
                       ],
                     ],
                   ),
